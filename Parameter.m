@@ -42,7 +42,7 @@ A33 = -motorresistance/motorinductivity;
 
 A_neu = [0 1 0; 0 A22 A23; 0 A32 A33];
 B_neu = [0; 0; 1/motorinductivity];
-E_neu = [0; -((m_last/2 + m_Reifen) * g * mue * Reifen_Radius); 0 ];
+E_neu = [0; -((m_last/2 + m_Reifen) / (motorinertia + (m_Reifen *Reifen_Radius^2)/50) * g * mue * Reifen_Radius); 0 ];
 CT_nvel = [0 1 0];
 CT_npos = [1 0 0];
 x0_neu = [0; 0.01; 0];
