@@ -59,6 +59,10 @@ E_neu2 = [0; 0; 0 ];
 
 %omega = (1/(motordamping +((motortorquekoef^2)/motorresistance))) * ((motortorquekoef/motorresistance) * TestV - (m_last/2 + m_Reifen) * g *mue * Reifen_Radius)
 
+AA = [-(motordamping/motorinertia) motortorquekoef/motorinertia -(1/motorinertia); -motorBackEMFkoef/motorinductivity -motorresistance/motorinductivity 0; 0 0 0 ];
+BB = [0;1/motorinductivity;0];
+CCT = [0 0 1];
+xx0 = [ 0; 0; 0];
 
 
 
