@@ -64,6 +64,79 @@ BB = [0;1/motorinductivity;0];
 CCT = [0 0 1];
 xx0 = [ 0; 0; 0];
 
+%% Sym-try
+% input: V
+% output: i -> T
+
+%% Operating point
+
+x0s = [
+    0;
+    0;
+    0;
+    ];
+
+u0 = 0;
+z0 = 0;
+
+%% Symbolic variables
+
+
+x_sym = sym('x',[3 1]);
+u_sym = sym('u',[1 1]);
+z_sym = sym('z',[1 1]);
+y_sym = sym('y',[1 1]);
+
+%% Symbolic functions
+
+f1_sym = x_sym(2);
+% Momentengleichgewicht 
+f2_sym = (-motordamping/(motorinertia + (m_Reifen * Reifen_Radius^2)/50)) * x_sym(2) + (motortorquekoef/(motorinertia + (m_Reifen * Reifen_Radius^2)/50)) * x_sym(3) - (m_ges/3)*g*mue*Reifen_Radius;
+f3_sym = 
+
+
+%% state functions
+f_sym = [
+    f1_sym;
+    f2_sym;
+    f3_sym;
+    ];
+
+%% output function
+g_sym = [
+    x_sym(3);
+    ];
+
+%% system matrices (symbolic)
+
+A_sym = jacobian(f_sym,x_sym);
+b_sym = jacobian(f_sym,u_sym);
+e_sym = jacobian(f_sym,z_sym);
+
+c_sym = jacobian(g_sym,x_sym);
+
+%% system matrices (functions)
+
+A_func = matlabFunction(A_sym,'Vars',{x_sym,u_sym,z_sym});
+b_func = matlabFunction(b_sym,'Vars',{x_sym,u_sym,z_sym});
+e_func = matlabFunction(e_sym,'Vars',{x_sym,u_sym,z_sym});
+
+c_func = matlabFunction(c_sym,'Vars',{x_sym,u_sym,z_sym});
+
+%% system matrices (numerical)
+
+A = A_func(x0,u0,z0);
+b = b_func(x0,u0,z0);
+e = e_func(x0,u0,z0);
+
+c = c_func(x0,u0,z0);
+d = 0;
+
+%% state space system
+
+sys = ss(A,b,c,d);
+
+
 
 
 
