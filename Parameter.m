@@ -7,6 +7,9 @@ m_ges = 0.53;                % [kg]
 m_last = 0.51;               % [kg]
 Achsabstand = 0.15;          % [m]
 Motoruebersetzung = 1/50;    % [1]
+B_dis = 0.25;                % [m]
+I_Bot = 0.0072;              % [kg*m^2]
+mue_g = 0.35;                % [1]
 
 
 %% Motormodell
@@ -26,7 +29,7 @@ Reifen_Radius = 0.05;        % [m]
 
 %% motor state space model
 
-A = [0 1 0; 0 -motordamping/motorinertia motortorquekoef/motorinertia;0 -motorBackEMFkoef/motorinductivity -motorresistance/motorinductivity];
+A_alt = [0 1 0; 0 -motordamping/motorinertia motortorquekoef/motorinertia;0 -motorBackEMFkoef/motorinductivity -motorresistance/motorinductivity];
 B = [0; 0; 1/motorinductivity];
 CT = [0 1 0];
 D = [0];
@@ -43,8 +46,9 @@ A33 = -motorresistance/motorinductivity;
 A_neu = [0 1 0; 0 A22 A23; 0 A32 A33];
 B_neu = [0; 0; 1/motorinductivity];
 E_neu = [0; -((m_last/2 + m_Reifen) / (motorinertia + (m_Reifen *Reifen_Radius^2)/50) * g * mue * Reifen_Radius); 0 ];
-CT_nvel = [0 1 0];
-CT_npos = [1 0 0];
+CT_omega = [0 1 0];
+CT_phi = [1 0 0];
+CT_i = [0 0 1];
 x0_neu = [0; 0.01; 0];
 
 %% third try state space model
@@ -92,7 +96,8 @@ y_sym = sym('y',[1 1]);
 f1_sym = x_sym(2);
 % Momentengleichgewicht 
 f2_sym = (-motordamping/(motorinertia + (m_Reifen * Reifen_Radius^2)/50)) * x_sym(2) + (motortorquekoef/(motorinertia + (m_Reifen * Reifen_Radius^2)/50)) * x_sym(3) - (m_ges/3)*g*mue*Reifen_Radius;
-f3_sym = 
+% Maschenregel
+f3_sym = (-motortorquekoef/motorinductivity) * x_sym(2) - (motorresistance/motorinductivity) * x_sym(3) + (1/motorinductivity)* u_sym;
 
 
 %% state functions
@@ -125,11 +130,11 @@ c_func = matlabFunction(c_sym,'Vars',{x_sym,u_sym,z_sym});
 
 %% system matrices (numerical)
 
-A = A_func(x0,u0,z0);
-b = b_func(x0,u0,z0);
-e = e_func(x0,u0,z0);
+A = A_func(x0s,u0,z0);
+b = b_func(x0s,u0,z0);
+e = e_func(x0s,u0,z0);
 
-c = c_func(x0,u0,z0);
+c = c_func(x0s,u0,z0);
 d = 0;
 
 %% state space system
@@ -137,6 +142,6 @@ d = 0;
 sys = ss(A,b,c,d);
 
 
-
+%% Functions
 
 
