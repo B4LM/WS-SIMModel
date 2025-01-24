@@ -77,39 +77,36 @@ xx0 = [ 0; 0; 0];
 x0s = [
     0;
     0;
-    0;
     ];
 
-u0 = 0;
+u0 = [0 ; 0];
 z0 = 0;
 
 %% Symbolic variables
 
 
-x_sym = sym('x',[3 1]);
-u_sym = sym('u',[1 1]);
+x_sym = sym('x',[2 1]);
+u_sym = sym('u',[2 1]);
 z_sym = sym('z',[1 1]);
 y_sym = sym('y',[1 1]);
 
 %% Symbolic functions
 
-f1_sym = x_sym(2);
-% Momentengleichgewicht 
-f2_sym = (-motordamping/(motorinertia + (m_Reifen * Reifen_Radius^2)/50)) * x_sym(2) + (motortorquekoef/(motorinertia + (m_Reifen * Reifen_Radius^2)/50)) * x_sym(3) - (m_ges/3)*g*mue*Reifen_Radius;
-% Maschenregel
-f3_sym = (-motortorquekoef/motorinductivity) * x_sym(2) - (motorresistance/motorinductivity) * x_sym(3) + (1/motorinductivity)* u_sym;
+% Momentengleichgewicht im Motor (Last als Eingangsgröße)
+f1_sym = (motortorquekoef/motorinertia) * x_sym(1)- (motordamping/motorinertia) * x_sym(2)  - (1/motorinertia)*u_sym(2);
+% Maschenregel in Motor
+f2_sym = -(motorresistance/motorinductivity) * x_sym(1) - (motortorquekoef/motorinductivity) * x_sym(2)  + (1/motorinductivity)* u_sym(1);
 
 
 %% state functions
 f_sym = [
     f1_sym;
     f2_sym;
-    f3_sym;
     ];
 
 %% output function
 g_sym = [
-    x_sym(3);
+    x_sym(2);
     ];
 
 %% system matrices (symbolic)
