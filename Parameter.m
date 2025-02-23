@@ -95,9 +95,9 @@ y_sym = sym('y',[1 1]);
 %% Symbolic functions
 
 % Momentengleichgewicht im Motor (Last als Eingangsgröße)
-f1_sym = (motortorquekoef/motorinertia) * x_sym(1)- (motordamping/motorinertia) * x_sym(2)  - (1/motorinertia)*u_sym(2);
+f1_sym = -(motorresistance/motorinductivity) * x_sym(1) - (motortorquekoef/motorinductivity) * x_sym(2)  + (1/motorinductivity)* u_sym(1);
 % Maschenregel in Motor
-f2_sym = -(motorresistance/motorinductivity) * x_sym(1) - (motortorquekoef/motorinductivity) * x_sym(2)  + (1/motorinductivity)* u_sym(1);
+f2_sym = (motortorquekoef/motorinertia) * x_sym(1)- (motordamping/motorinertia) * x_sym(2)  - (1/motorinertia)*u_sym(2);
 
 
 %% state functions
@@ -108,7 +108,7 @@ f_sym = [
 
 %% output function
 g_sym = [
-    x_sym(2);
+    -x_sym(2);
     ];
 
 %% system matrices (symbolic)
