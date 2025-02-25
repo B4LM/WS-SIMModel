@@ -16,12 +16,12 @@ mue_g = 0.35;                % [1]
 
 %% Motormodell
 
-motorinertia = 0.847 * 10^-6;% [kg*m^2]
+motorinertia = 0.847 * 10^-6;% [kg*m^2] 
 motorinductivity = 0.0005;   % [H]
 motorresistance =  3;        % [Ohm]
-motordamping = 0.005;        % [?]
-motortorquekoef = 0.06533;   % [N*m / A] 0.00174
-motorBackEMFkoef = 0.06533;  % [?] 0.00174
+motordamping = 0.0001;        % [?] [0.005-> alt]
+motortorquekoef = 0.000377;   % [N*m / A] [0.06533-> alt] [0.00174]
+motorBackEMFkoef = 0.000377;  % [?] [0.06533-> alt]
 
 %% Reifenmodell
 
@@ -108,7 +108,7 @@ f_sym = [
 
 %% output function
 g_sym = [
-    -x_sym(2);
+    x_sym(2);
     ];
 
 %% system matrices (symbolic)
@@ -141,6 +141,25 @@ d = 0;
 sys = ss(A,b,c,d);
 
 
-%% Functions
+%% Sys-Test
+
+% Zeitvektor
+t = 0:0.01:10; 
+
+% Eingangsgröße (z.B. sinusförmig)
+u = ones(length(t), 1) * [6, 0]; %3.466
+
+% Anfangszustand (optional)
+x0 = [0; 0];
+
+% Simulation
+[y, t, x] = lsim(sys, u, t, x0);
+
+% Ergebnis plotten
+plot(t, y*(60/(2*pi*50)))
+xlabel('Zeit (s)')
+ylabel('n_M [rpm]')
+title('Systemantwort auf Eingangsgröße')
+grid on
 
 
