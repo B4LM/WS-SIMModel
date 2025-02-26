@@ -20,8 +20,8 @@ motorinertia = 0.847 * 10^-6;% [kg*m^2]
 motorinductivity = 0.0005;   % [H]
 motorresistance =  3;        % [Ohm]
 motordamping = 0.0001;        % [?] [0.005-> alt]
-motortorquekoef = 0.000377;   % [N*m / A] [0.06533-> alt] [0.00174]
-motorBackEMFkoef = 0.000377;  % [?] [0.06533-> alt]
+motortorquekoef = 0.002;   % [N*m / A] [0.06533-> alt] [0.00174]
+motorBackEMFkoef = 0.002;  % [?] [0.06533-> alt]
 
 %% Reifenmodell
 
@@ -147,7 +147,7 @@ sys = ss(A,b,c,d);
 t = 0:0.01:10; 
 
 % Eingangsgröße (z.B. sinusförmig)
-u = ones(length(t), 1) * [6, 0]; %3.466
+u = ones(length(t), 1) * [12, 0]; %3.466
 
 % Anfangszustand (optional)
 x0 = [0; 0];
@@ -156,9 +156,9 @@ x0 = [0; 0];
 [y, t, x] = lsim(sys, u, t, x0);
 
 % Ergebnis plotten
-plot(t, y*(60/(2*pi*50)))
+plot(t, 0.6*(y/pi))
 xlabel('Zeit (s)')
-ylabel('n_M [rpm]')
+ylabel('n_G [rpm]')
 title('Systemantwort auf Eingangsgröße')
 grid on
 
