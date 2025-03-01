@@ -182,3 +182,17 @@ nm = (motorresistance / (motortorquekoef^2 +  motorresistance * motordamping)) *
 % [maxX, maxidx] = max(extreme_values);
 % best_location = extreme_points(maxidx);
 % best_value = simplify(maxX, 'steps', 50);
+
+%% Map
+
+myMap = binaryOccupancyMap(1.8,1.8,50);
+
+walls = zeros(90,90);
+walls(1,:) = 1; % Top wall
+walls(end,:) = 1; % Bottom wall
+walls(:,1) = 1; % Left wall
+walls(:,end) = 1; % Right wall
+
+
+setOccupancy(myMap,[1 1], walls, "grid")
+show(myMap)
