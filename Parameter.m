@@ -16,12 +16,12 @@ mue_g = 0.35;                % [1]
 
 %% Motormodell
 
-motorinertia = 0.847 * 10^-6;  % [kg*m^2] 
+motorinertia = 0.847 * 10^-7;  % [kg*m^2] 
 motorinductivity = 0.0005;     % [H]
 motorresistance =  3;          % [Ohm]
-motordamping = 4.8 * 10^-6;    % [N*m*s] [0.005-> alt]
-motortorquekoef = 0.0038;      % [N*m / A] [0.06533-> alt] [0.00174]
-motorBackEMFkoef = 0.0038;     % [V*s / rad] [0.06533-> alt]
+motordamping = 1.2 * 10^-6;    % [N*m*s] [0.005-> alt]
+motortorquekoef = 0.0019;      % [N*m / A] [0.06533-> alt] [0.00174]
+motorBackEMFkoef = 0.0019;     % [V*s / rad] [0.06533-> alt]
 
 %% Reifenmodell
 
@@ -166,22 +166,22 @@ grid on
 U_ein = 12;
 T_ein = 0;
 nm = (motorresistance / (motortorquekoef^2 +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein)% * (60/(2*pi))/50;
-% x1 = linspace(0,0.1,1000); 
-% nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/50;
-% 
-% plot(x1, nmt1)
-% xlim([0 0.1])
+x1 = linspace(0,0.1,1000); 
+nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* Motoruebersetzung;
+
+plot(x1, nmt1)
+xlim([0 0.1])
 
 %%%%%
 
-% syms x1
-% f = (motorresistance / (x1^2 +  motorresistance * motordamping)) * ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100;
-% f2 = diff(f,x1)==0;
-% extreme_points = solve(f2,x1);
-% extreme_values = subs(f, x1, extreme_points);
-% [maxX, maxidx] = max(extreme_values);
-% best_location = extreme_points(maxidx);
-% best_value = simplify(maxX, 'steps', 50);
+syms x1
+f = (motorresistance / (x1^2 +  motorresistance * motordamping)) * ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100;
+f2 = diff(f,x1)==0;
+extreme_points = solve(f2,x1);
+extreme_values = subs(f, x1, extreme_points);
+[maxX, maxidx] = max(extreme_values);
+best_location = extreme_points(maxidx);
+best_value = simplify(maxX, 'steps', 50);
 
 %% Map
 
@@ -195,4 +195,4 @@ walls(15:165,165) = 1; % Right wall
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
-show(myMap)
+%show(myMap)
