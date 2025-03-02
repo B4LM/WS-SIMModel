@@ -185,13 +185,13 @@ nm = (motorresistance / (motortorquekoef^2 +  motorresistance * motordamping)) *
 
 %% Map
 
-myMap = binaryOccupancyMap(1.8,1.8,50);
+myMap = binaryOccupancyMap(18,18,10);
 
-walls = zeros(90,90);
-walls(1,:) = 1; % Top wall
-walls(end,:) = 1; % Bottom wall
-walls(:,1) = 1; % Left wall
-walls(:,end) = 1; % Right wall
+walls = zeros(180,180);
+walls(15,15:165) = 1; % Top wall
+walls(165,15:165) = 1; % Bottom wall
+walls(15:165,15) = 1; % Left wall
+walls(15:165,165) = 1; % Right wall
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
