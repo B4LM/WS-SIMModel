@@ -6,12 +6,14 @@ g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
 m_last = 0.86;               % [kg]
 Achsabstand = 0.15;          % [m]    
-Motoruebersetzung = 1/100;   % [1]
+Motoruebersetzung = 100;   % [1]
 B_dis = 0.25;                % [m]
 R_dis = 0.15;                % [m]
 Xi = 2/3;                    % [1]
 I_Bot = 0.0072;              % [kg*m^2]
 mue_g = 0.35;                % [1]
+
+waypoint = [1.6;0.2];
 
 
 %% Motormodell
@@ -163,25 +165,25 @@ title('Systemantwort auf Eingangsgröße')
 grid on
 
 %% ruhelage
-U_ein = 12;
-T_ein = 0;
-nm = (motorresistance / (motortorquekoef^2 +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein)% * (60/(2*pi))/50;
-x1 = linspace(0,0.1,1000); 
-nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* Motoruebersetzung;
-
-plot(x1, nmt1)
-xlim([0 0.1])
+% U_ein = 12;
+% T_ein = 0;
+% nm = (motorresistance / (motortorquekoef^2 +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein)% * (60/(2*pi))/50;
+% x1 = linspace(0,0.1,1000); 
+% nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* (1/Motoruebersetzung);
+% 
+% plot(x1, nmt1)
+% xlim([0 0.1])
 
 %%%%%
 
-syms x1
-f = (motorresistance / (x1^2 +  motorresistance * motordamping)) * ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100;
-f2 = diff(f,x1)==0;
-extreme_points = solve(f2,x1);
-extreme_values = subs(f, x1, extreme_points);
-[maxX, maxidx] = max(extreme_values);
-best_location = extreme_points(maxidx);
-best_value = simplify(maxX, 'steps', 50);
+% syms x1
+% f = (motorresistance / (x1^2 +  motorresistance * motordamping)) * ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100;
+% f2 = diff(f,x1)==0;
+% extreme_points = solve(f2,x1);
+% extreme_values = subs(f, x1, extreme_points);
+% [maxX, maxidx] = max(extreme_values);
+% best_location = extreme_points(maxidx);
+% best_value = simplify(maxX, 'steps', 50);
 
 %% Map
 
@@ -192,7 +194,8 @@ walls(15,15:165) = 1; % Top wall
 walls(165,15:165) = 1; % Bottom wall
 walls(15:165,15) = 1; % Left wall
 walls(15:165,165) = 1; % Right wall
+walls(180-waypoint(2)*100,waypoint(1)*100) = 1; %waypoint
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
-%show(myMap)
+show(myMap)
