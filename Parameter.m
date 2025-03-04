@@ -6,14 +6,14 @@ g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
 m_last = 0.86;               % [kg]
 Achsabstand = 0.15;          % [m]    
-Motoruebersetzung = 100;   % [1]
+Motoruebersetzung = 100;     % [1]
 B_dis = 0.25;                % [m]
 R_dis = 0.15;                % [m]
 Xi = 2/3;                    % [1]
 I_Bot = 0.0072;              % [kg*m^2]
 mue_g = 0.35;                % [1]
 
-waypoint = [1.6;0.2];
+waypoint = [1.6;1];
 
 
 %% Motormodell
