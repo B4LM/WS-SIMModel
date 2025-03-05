@@ -13,7 +13,8 @@ Xi = 2/3;                    % [1]
 I_Bot = 0.0072;              % [kg*m^2]
 mue_g = 0.35;                % [1]
 
-waypoint = [1.6;1];
+startPos = [0.3;0.3];
+waypoint = [0.2;1.4];
 
 
 %% Motormodell
@@ -187,14 +188,14 @@ grid on
 
 %% Map
 
-myMap = binaryOccupancyMap(18,18,10);
+myMap = binaryOccupancyMap(1.8,1.8,100);
 
 walls = zeros(180,180);
 walls(15,15:165) = 1; % Top wall
 walls(165,15:165) = 1; % Bottom wall
 walls(15:165,15) = 1; % Left wall
 walls(15:165,165) = 1; % Right wall
-walls(180-waypoint(2)*100,waypoint(1)*100) = 1; %waypoint
+walls((180-waypoint(2)*100)-1:(180-waypoint(2)*100)+1,(waypoint(1)*100)-1:(waypoint(1)*100)+1) = 1; %waypoint
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
