@@ -14,7 +14,7 @@ I_Bot = 0.0072;              % [kg*m^2]
 mue_g = 0.35;                % [1]
 
 startPos = [0.3;0.3];
-waypoint = [0.2;1.4];
+waypoint = [1;1.2];
 
 
 %% Motormodell
