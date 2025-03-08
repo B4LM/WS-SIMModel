@@ -19,12 +19,20 @@ waypoint = [1;1.2];
 
 %% Motormodell
 
-motorinertia = 0.847 * 10^-7;  % [kg*m^2] 
-motorinductivity = 0.0005;     % [H]
-motorresistance =  3;          % [Ohm]
-motordamping = 1.2 * 10^-6;    % [N*m*s] [0.005-> alt]
-motortorquekoef = 0.0019;      % [N*m / A] [0.06533-> alt] [0.00174]
-motorBackEMFkoef = 0.0019;     % [V*s / rad] [0.06533-> alt]
+% motorinertia = 0.847 * 10^-6;  % [kg*m^2] 
+% motorinductivity = 0.0005;     % [H]
+% motorresistance =  3;          % [Ohm]
+% %motordamping = 2.5* 10^-6;    % [N*m*s] [0.005-> alt] [1.2 * 10^-6;]
+% motordamping = 0;    % [N*m*s] [0.005-> alt] [1.2 * 10^-6;]
+% motortorquekoef = 0.065;      % [N*m / A] [0.06533-> alt] [0.00174] [0.0019]
+% motorBackEMFkoef = 0.065;     % [V*s / rad] [0.06533-> alt][0.0019]
+
+motorinertia = 5 * 10^-8;       % [kg*m^2] 
+motorinductivity = 100 *10^-6;  % [H]
+motorresistance =  13.33;       % [Ohm]
+motordamping = 4.16* 10^-5;      % [N*m*s]
+motortorquekoef = 0.0174;        % [N*m / A]
+motorBackEMFkoef = 0.0174;       % [V*s / rad]
 
 %% Reifenmodell
 
@@ -98,7 +106,7 @@ y_sym = sym('y',[1 1]);
 %% Symbolic functions
 
 % Momentengleichgewicht im Motor (Last als Eingangsgröße)
-f1_sym = -(motorresistance/motorinductivity) * x_sym(1) - (motortorquekoef/motorinductivity) * x_sym(2)  + (1/motorinductivity)* u_sym(1);
+f1_sym = -(motorresistance/motorinductivity) * x_sym(1) - (motorBackEMFkoef/motorinductivity) * x_sym(2)  + (1/motorinductivity)* u_sym(1);
 % Maschenregel in Motor
 f2_sym = (motortorquekoef/motorinertia) * x_sym(1)- (motordamping/motorinertia) * x_sym(2)  - (1/motorinertia)*u_sym(2);
 
@@ -166,25 +174,25 @@ title('Systemantwort auf Eingangsgröße')
 grid on
 
 %% ruhelage
-% U_ein = 12;
-% T_ein = 0;
-% nm = (motorresistance / (motortorquekoef^2 +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein)% * (60/(2*pi))/50;
-% x1 = linspace(0,0.1,1000); 
-% nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* (1/Motoruebersetzung);
-% 
-% plot(x1, nmt1)
-% xlim([0 0.1])
+U_ein = 12;
+T_ein = 0;
+nm = (motorresistance / (motortorquekoef*motorBackEMFkoef +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100
+x1 = linspace(0,1,1000); 
+nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* (1/Motoruebersetzung);
 
-%%%%%
+plot(x1, nmt1)
+xlim([0 1])
 
-% syms x1
-% f = (motorresistance / (x1^2 +  motorresistance * motordamping)) * ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100;
-% f2 = diff(f,x1)==0;
-% extreme_points = solve(f2,x1);
-% extreme_values = subs(f, x1, extreme_points);
-% [maxX, maxidx] = max(extreme_values);
-% best_location = extreme_points(maxidx);
-% best_value = simplify(maxX, 'steps', 50);
+%%%%
+
+syms x1
+f = (motorresistance / (x1^2 +  motorresistance * motordamping)) * ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))/100;
+f2 = diff(f,x1)==0;
+extreme_points = solve(f2,x1);
+extreme_values = subs(f, x1, extreme_points);
+[maxX, maxidx] = max(extreme_values);
+best_location = extreme_points(maxidx);
+best_value = simplify(maxX, 'steps', 50);
 
 %% Map
 
@@ -199,4 +207,4 @@ walls((180-waypoint(2)*100)-1:(180-waypoint(2)*100)+1,(waypoint(1)*100)-1:(waypo
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
-show(myMap)
+%show(myMap)
