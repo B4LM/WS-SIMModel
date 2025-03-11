@@ -27,13 +27,20 @@ waypoint = [1;1.2];
 % motortorquekoef = 0.065;      % [N*m / A] [0.06533-> alt] [0.00174] [0.0019]
 % motorBackEMFkoef = 0.065;     % [V*s / rad] [0.06533-> alt][0.0019]
 
-motorinertia = 5 * 10^-8;       % [kg*m^2] 
-motorinductivity = 100 *10^-6;  % [H]
-motorresistance =  13.33;       % [Ohm]
-motordamping = 7.216 * 10^-4;    % [N*m*s]
-motortorquekoef = 0.302;      % [N*m / A]
-motorBackEMFkoef = 0.302;     % [V*s / rad]
-V_brush = 1.5;                  % [V]
+% motorinertia = 5 * 10^-8;       % [kg*m^2] 
+% motorinductivity = 100 *10^-6;  % [H]
+% motorresistance =  13.33;       % [Ohm]
+% motordamping = 7.216 * 10^-4;    % [N*m*s]
+% motortorquekoef = 0.302;      % [N*m / A]
+% motorBackEMFkoef = 0.302;     % [V*s / rad]
+% V_brush = 1.5;                  % [V]
+
+motorinertia = 0.847 * 10^-6;        % [kg*m^2] 
+motorinductivity = 0.0002;       % [H]
+motorresistance =  13.33;            % [Ohm]
+motordamping = 9.12 * 10^-8;          % [N*m*s][7.216 * 10^-4];
+motortorquekoef = 0.0174;      % [N*m / A]
+motorBackEMFkoef = 0.0035;     % [V*s / rad]
 
 %% Reifenmodell
 
@@ -177,7 +184,7 @@ grid on
 %% ruhelage
 U_ein = 12;
 T_ein = 0;
-nm = (motorresistance / (motortorquekoef*motorBackEMFkoef +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein -(motortorquekoef / motorresistance)*V_brush- T_ein) * (60/(2*pi))* Motoruebersetzung;
+nm = (motorresistance / (motortorquekoef*motorBackEMFkoef +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein) * (60/(2*pi*Motoruebersetzung))
 x1 = linspace(0,1,1000); 
 nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* (1/Motoruebersetzung);
 
@@ -208,9 +215,9 @@ walls((180-waypoint(2)*100)-1:(180-waypoint(2)*100)+1,(waypoint(1)*100)-1:(waypo
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
-%show(myMap)
+show(myMap)
 
-%% Test
-U_ein = 12;
-oms = (motortorquekoef/(motorresistance*motordamping+motortorquekoef*motorBackEMFkoef))*(U_ein-V_brush)
-oms_rpm = oms * (60*Motoruebersetzung)/(2*pi)
+% %% Test
+% U_ein = 12;
+% oms = (motortorquekoef/(motorresistance*motordamping+motortorquekoef*motorBackEMFkoef))*(U_ein-V_brush)
+% oms_rpm = oms * (60*Motoruebersetzung)/(2*pi)
