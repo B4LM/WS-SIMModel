@@ -4,7 +4,7 @@ clc; clear; close all;
 
 g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
-m_last = 0.86;               % [kg]
+m_last = 0.424;               % [kg]
 Achsabstand = 0.15;          % [m]    
 Motoruebersetzung = 100;     % [1]
 B_dis = 0.25;                % [m]
@@ -187,9 +187,12 @@ T_ein = 0;
 nm = (motorresistance / (motortorquekoef*motorBackEMFkoef +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - T_ein) * (60/(2*pi*Motoruebersetzung))
 x1 = linspace(0,1,1000); 
 nmt1 = (motorresistance ./ (x1.^2 +  motorresistance * motordamping)) .* ((x1 / motorresistance) * U_ein - T_ein) * (60/(2*pi))* (1/Motoruebersetzung);
-
-plot(x1, nmt1)
+%plot(x1, nmt1)
 xlim([0 1])
+
+syms tl
+ftl = (motorresistance / (motortorquekoef*motorBackEMFkoef +  motorresistance * motordamping)) * ((motortorquekoef / motorresistance) * U_ein - tl) * (60/(2*pi*Motoruebersetzung));
+fplot(ftl,[0 0.02])
 
 %%%%
 
@@ -215,7 +218,7 @@ walls((180-waypoint(2)*100)-1:(180-waypoint(2)*100)+1,(waypoint(1)*100)-1:(waypo
 
 
 setOccupancy(myMap,[1 1], walls, "grid")
-show(myMap)
+%show(myMap)
 
 % %% Test
 % U_ein = 12;
