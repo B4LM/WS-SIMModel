@@ -16,7 +16,7 @@ B_dis = 0.25;                % [m]
 R_dis = 0.15;                % [m]
 Xi = 2/3;                    % [1]
 I_Bot = 0.0072;              % [kg*m^2]
-mue_g = 0.35;                % [1]
+mue_g = 0.1;                 % [1]
 
 
 %% Motormodell
@@ -30,8 +30,7 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 %% Reifenmodell
 
-m_Reifen = 0.038;                % [kg]
-mue = 0.002;                     % [1]
+m_Reifen = 0.038;                % [kg]               
 Reifen_Radius = 0.04;            % [m]
 
 %% symbolische Variablen
@@ -116,3 +115,11 @@ walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zi
 
 setOccupancy(myMap,[1 1], walls, "grid")
 show(myMap)
+
+
+
+
+
+
+
+
