@@ -1,8 +1,11 @@
+% Die Eingänge müssen im Simulink Modell eingesetllt werden!
+
 clc; clear; close all; 
 
 %% Wegpunkte
 
-StartPos = [0.3;0.3];     
+StartPos = [0.3;0.3];
+Zielpunkt = [1;1.2]; %benötigt PID-Regler
 
 %% Parameter
 
@@ -29,24 +32,42 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 m_Reifen = 0.038;                   % [kg]               
 Reifen_Radius = 0.04;               % [m]
 
-%; B_dis;R_dis ;Xi;I_Bot;mue_g;motor_traegheit;motor_Induktivitaet;motor_Widerstand;motor_Daempfung;motor_Drehmomentkoef;motor_BackEMFkoef;m_Reifen,Reifen_Radius
-Params= [m_ges; Achsabstand;Motoruebersetzung];
-Params_0 = Params;
+%; 'B_dis','R_dis'
+%,'Xi','I_Bot','mue_g','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef','m_Reifen','Reifen_Radius',
+%'Achsabstand','Motoruebersetzung'
+ParamsList= {'m_ges','Achsabstand'};
 
-for i = 1:length(Params)
+
+pstruct = struct();
+
+for n=1:length(ParamsList)
+    pname = ParamsList{n};
+    pstruct.(pname) = Sensibilities(eval(pname));
+end
+%Paramfielnames = fieldnames(pstruct);
+
+for i = 1:length(ParamsList)
     for j=1:5
-        i
-        j
+        ParamZero = eval(ParamsList{i});
         switch j
             case 1
-                Params(i)= 0.9*Params(i);
+                factor = 0.9;
             case 2
-                Params(i)= 0.95*Params(i);
+                factor = 0.95;
+            case 3
+                factor = 1;
             case 4
-                Params(i)= 1.05*Params(i);
+                factor = 1.05;
             case 5
-                Params(i)= 1.1*Params(i);
+                factor = 1.1;
         end
+        assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value * factor)
+        %disp(eval(ParamsList{i}))
+%     end
+%     assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value)
+% end
+
+
     %Simulationsvorbereitung
     x_sym = sym('x',[2 1]);
     u_sym = sym('u',[2 1]);
@@ -55,7 +76,7 @@ for i = 1:length(Params)
 
     f1_sym = -(motor_Widerstand/motor_Induktivitaet) * x_sym(1) - (motor_BackEMFkoef/motor_Induktivitaet) * x_sym(2)  + (1/motor_Induktivitaet)* u_sym(1);
     f2_sym = (motor_Drehmomentkoef/motor_traegheit) * x_sym(1)- (motor_Daempfung/motor_traegheit) * x_sym(2)  - (1/motor_traegheit)*u_sym(2);
-    
+
     f_sym = [
     f1_sym;
     f2_sym;
@@ -69,33 +90,38 @@ for i = 1:length(Params)
         0;
         0;
         ];
-    
+
     u0 = [
         0;
         0;
         ];
-    
+
     z0 = 0;
 
     A_sym = jacobian(f_sym,x_sym);
     b_sym = jacobian(f_sym,u_sym);
-    
+
     c_sym = jacobian(g_sym,x_sym);
 
     A_func = matlabFunction(A_sym,'Vars',{x_sym,u_sym,z_sym});
     b_func = matlabFunction(b_sym,'Vars',{x_sym,u_sym,z_sym});
-    
+
     c_func = matlabFunction(c_sym,'Vars',{x_sym,u_sym,z_sym});
 
     A = A_func(x0s,u0,z0);
     b = b_func(x0s,u0,z0);
-    
-    c = c_func(x0s,u0,z0);
-    
-    ki= Achsabstand
-    %Simulation selber
 
-    %Reset
-    Params(i)=Params_0(i);
+    c = c_func(x0s,u0,z0);
+
+    %Simulation selber
+    sim('SimpleBot_V3')
+
+    %Results
+    
+    pstruct.(ParamsList{i}).position(j) = [out.position.Data(:,1), out.position.Data(:,2)];
+    pstruct.(ParamsList{i}).velocity(j) = [out.velocity.Time, out.velocity.Data];
+
     end
+    assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value)
 end
+
