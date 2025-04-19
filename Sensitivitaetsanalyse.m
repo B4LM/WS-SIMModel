@@ -35,7 +35,7 @@ Reifen_Radius = 0.04;               % [m]
 %; 'B_dis','R_dis'
 %,'Xi','I_Bot','mue_g','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef','m_Reifen','Reifen_Radius',
 %'Achsabstand','Motoruebersetzung'
-ParamsList= {'m_ges','Achsabstand'};
+ParamsList= {'m_ges','Achsabstand','B_dis','R_dis','Xi','I_Bot','mue_g','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef','m_Reifen','Reifen_Radius','Motoruebersetzung'};
 
 
 pstruct = struct();
@@ -114,14 +114,28 @@ for i = 1:length(ParamsList)
     c = c_func(x0s,u0,z0);
 
     %Simulation selber
-    sim('SimpleBot_V3')
+    load_system("SimpleBot_V3.slx")
+    set_param("SimpleBot_V3/Robot Visualizer","Commented","on")
+    disp('Sim startet!')
+    out = sim('SimpleBot_V3');
+    disp('Sim beendet!')
 
     %Results
-    
-    pstruct.(ParamsList{i}).position(j) = [out.position.Data(:,1), out.position.Data(:,2)];
-    pstruct.(ParamsList{i}).velocity(j) = [out.velocity.Time, out.velocity.Data];
+
+    pstruct.(ParamsList{i}).savePosData(out.position.Data,j);
+    pstruct.(ParamsList{i}).saveVelData(out.velocity.Data,j);
+    pstruct.(ParamsList{i}).saveTime(out.velocity.Time,j);
+    %pstruct.(ParamsList{i}).position(j) = [out.position.Data(:,1), out.position.Data(:,2)];
+    %pstruct.(ParamsList{i}).velocity(j) = [out.velocity.Time, out.velocity.Data];
 
     end
     assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value)
 end
+
+for pn = 1: length(ParamsList)
+    plotSensibilities(pstruct,ParamsList(pn))
+    input('nächter Parameter');
+end
+
+
 

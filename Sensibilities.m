@@ -5,8 +5,8 @@ classdef Sensibilities< handle
     properties
         position (1,5) cell
         velocity (1,5) cell
-        value (1,1) double
-        time (1,1) cell
+        time (1,5) cell
+        value (1,1) double   
     end
     
     methods
@@ -16,11 +16,15 @@ classdef Sensibilities< handle
         end
         
         function savePosData(param,SimPosData,Dataset)
-            param.position(Dataset) = SimPosData;
+            param.position{Dataset} = SimPosData;
         end
 
         function saveVelData(param,SimVelData,Dataset)
-            param.velocity(Dataset) = SimVelData;
+            param.velocity{Dataset} = SimVelData;
+        end
+
+        function saveTime(param,SimTimeData,Dataset)
+            param.time{Dataset} = SimTimeData;
         end
 
     end
