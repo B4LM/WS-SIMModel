@@ -33,16 +33,13 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 m_Reifen = 0.038;                % [kg]               
 Reifen_Radius = 0.04;            % [m]
 
-Params = [motor_Widerstand ; motor_Induktivitaet; motor_BackEMFkoef; motor_Drehmomentkoef; motor_traegheit; motor_Daempfung];
-
 %% symbolische Variablen
 
 x_sym = sym('x',[2 1]);
 u_sym = sym('u',[2 1]);
 z_sym = sym('z',[1 1]);
 y_sym = sym('y',[1 1]);
-p_sym = sym('p',[6,1]);
-
+p_sym = sym('p',[6 1]);
 
 %% symbolische Funktionen
 
@@ -52,15 +49,18 @@ f1_sym = -(p_sym(1)/p_sym(2)) * x_sym(1) - (p_sym(3)/p_sym(2)) * x_sym(2)  + (1/
 f2_sym = (p_sym(4)/p_sym(5)) * x_sym(1)- (p_sym(6)/p_sym(5)) * x_sym(2)  - (1/p_sym(5))*u_sym(2);
 
 
+%% state functions
 f_sym = [
     f1_sym;
     f2_sym;
     ];
 
+%% output function
 g_sym = [
     x_sym(2);
     ];
 
+%% initial values
 x0s = [
     0;
     0;
@@ -73,32 +73,73 @@ u0 = [
 
 z0 = 0;
 
-A_sym = jacobian(f_sym,x_sym); % ∂f/∂x
-btheta_sym = jacobian(f_sym,p_sym);  % ∂f/∂θ
+p0 = [
+    motor_Widerstand ;
+    motor_Induktivitaet;
+    motor_BackEMFkoef;
+    motor_Drehmomentkoef;
+    motor_traegheit;
+    motor_Daempfung
+    ];
+
+%% system matrices (symbolic)
+
+A_sym = jacobian(f_sym,x_sym);
+b_sym = jacobian(f_sym,u_sym);
 e_sym = jacobian(f_sym,z_sym);
+
 c_sym = jacobian(g_sym,x_sym);
 
+dbdp_sym = jacobian(b_sym,p_sym);
+dAdp_sym = jacobian(A_sym,p_sym);
 
-A_func = matlabFunction(A_sym,'Vars',{x_sym, p_sym,u_sym,z_sym});
-btheta_func = matlabFunction(btheta_sym,'Vars',{x_sym, p_sym,u_sym,z_sym});
-e_func = matlabFunction(e_sym,'Vars',{x_sym,u_sym,z_sym});
-c_func = matlabFunction(c_sym,'Vars',{x_sym,u_sym,z_sym});
+%% system matrices (functions)
 
-A = A_func(x0s,Params,u0,z0);
-b = btheta_func(x0s,Params,u0,z0);
-e = e_func(x0s,u0,z0);
-c = c_func(x0s,u0,z0);
+A_func = matlabFunction(A_sym,'Vars',{x_sym,u_sym,p_sym,z_sym});
+b_func = matlabFunction(b_sym,'Vars',{x_sym,u_sym,p_sym,z_sym});
+e_func = matlabFunction(e_sym,'Vars',{x_sym,u_sym,p_sym,z_sym});
+
+c_func = matlabFunction(c_sym,'Vars',{x_sym,u_sym,p_sym,z_sym});
+
+dbdp_func = matlabFunction(dbdp_sym,'Vars',{x_sym,u_sym,p_sym,z_sym});
+dAdp_func = matlabFunction(dAdp_sym,'Vars',{x_sym,u_sym,p_sym,z_sym});
+
+
+%% system matrices (numerical)
+
+A = A_func(x0s,u0,p_sym,z0);
+b = b_func(x0s,u0,p_sym,z0);
+e = e_func(x0s,u0,p_sym,z0);
+
+c = c_func(x0s,u0,p_sym,z0);
 d = 0;
 
-% for i =1:length(Params)
-%     close all
-%     b_specficP = b(:,i);
-%     Sensitivity_sys = ss(A,b_specficP,c,d);
-%     step(Sensitivity_sys)
-%     input('nächter Parameter');
-% end
+dbdp_0 = dbdp_func(x0s,u0,p_sym,z0);
+dAdp_0 = dAdp_func(x0s,u0,p_sym,z0);
 
-s_theta = inv(A)*jacobian(b)
+%% Parametersensitivität
+
+S = inv(A)* (dbdp_0 - dAdp_0*x0s)
+
+%% state space system
+
+sys = ss(A,b,c,d);
+
+%% Map
+
+myMap = binaryOccupancyMap(1.8,1.8,100);
+
+walls = zeros(180,180);
+walls(15,15:165) = 1; % Nord-Wand
+walls(165,15:165) = 1; % Süd-Wand
+walls(15:165,15) = 1; % West-Wand
+walls(15:165,165) = 1; % Ost-Wand
+walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zielpunkt(1)*100)+1) = 1; %Zielpunkt
+
+
+setOccupancy(myMap,[1 1], walls, "grid")
+%show(myMap)
+
 
 
 
