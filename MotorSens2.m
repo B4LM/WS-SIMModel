@@ -121,24 +121,24 @@ dAdp_0 = dAdp_func(x0s,u0,p_sym,z0);
 
 S = inv(A)* (dbdp_0 - dAdp_0*x0s)
 
-%% state space system
-
-sys = ss(A,b,c,d);
-
-%% Map
-
-myMap = binaryOccupancyMap(1.8,1.8,100);
-
-walls = zeros(180,180);
-walls(15,15:165) = 1; % Nord-Wand
-walls(165,15:165) = 1; % Süd-Wand
-walls(15:165,15) = 1; % West-Wand
-walls(15:165,165) = 1; % Ost-Wand
-walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zielpunkt(1)*100)+1) = 1; %Zielpunkt
-
-
-setOccupancy(myMap,[1 1], walls, "grid")
-%show(myMap)
+% %% state space system
+% 
+% sys = ss(A,b,c,d);
+% 
+% %% Map
+% 
+% myMap = binaryOccupancyMap(1.8,1.8,100);
+% 
+% walls = zeros(180,180);
+% walls(15,15:165) = 1; % Nord-Wand
+% walls(165,15:165) = 1; % Süd-Wand
+% walls(15:165,15) = 1; % West-Wand
+% walls(15:165,165) = 1; % Ost-Wand
+% walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zielpunkt(1)*100)+1) = 1; %Zielpunkt
+% 
+% 
+% setOccupancy(myMap,[1 1], walls, "grid")
+% %show(myMap)
 
 
 
