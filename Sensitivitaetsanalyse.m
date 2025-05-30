@@ -32,10 +32,10 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 m_Reifen = 0.038;                   % [kg]               
 Reifen_Radius = 0.04;               % [m]
 
-%; 'B_dis','R_dis'
+%'m_ges','Achsabstand', 'B_dis','R_dis'
 %,'Xi','I_Bot','mue_g','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef','m_Reifen','Reifen_Radius',
 %'Achsabstand','Motoruebersetzung'
-ParamsList= {'m_ges','Achsabstand','B_dis','R_dis','Xi','I_Bot','mue_g','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef','m_Reifen','Reifen_Radius','Motoruebersetzung'};
+ParamsList= {'m_ges','Achsabstand'};
 
 
 pstruct = struct();
