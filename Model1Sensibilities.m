@@ -70,39 +70,45 @@ M22_sym = M11_sym;
 J_g_sym = [M11_sym M12_sym;
            M21_sym M22_sym];
 
-v_Bot_sym = (p_Reifen_Radius/2)*(om_m1+om_m2);
-k_go = 1000; %steilheit für Übergang von 0 nach 1-> Fkt muss glatt sein
-v_tresh_sym = 1e-3;
-go_sym = 0.5 * (1 + tanh(k_go * (v_Bot_sym - v_tresh_sym)));  % Übergang für Reibkraft, muss glatt sein, funktioniert nur mit v>0!!!!!!
+v_Tresh_sym = 1e-3;
+k_smooth_sym = 5000;
 
-%Glätten der Funktion
-delta_om_sym = om_m2-om_m1;
-sum_om_sym = om_m2+ om_m1;
-eps_om_sym = 1e-9;
-k_sum_om = 1000;
-sum_om_safe_sym = sum_om_sym + tanh(k_sum_om *sum_om_sym) * eps_om_sym +eps_om_sym;
-base_frac_sym = (2 * p_B_dis /p_Achsabstand) * delta_om_sym / sum_om_safe_sym;
+eps_om_sym = 1e-6;
+eta_abs_sq_sym = (eps_om_sym/10)^2;
+k_xp_sym = 5 / eps_om_sym;
+delta_sig_sq_sym = 1e-6;
 
-k_smooth_frac = 1000;
-smooth_factor_straight_sym = 0.5 * (1 - tanh(k_smooth_frac * (delta_om_sym^2-sym(eps_om_sym^2))));
+OmegaSum_sym = om_m1 + om_m2;
+v_Bot_sym = (p_Reifen_Radius/2)*OmegaSum_sym;
+smooth_factor_sym = 0.5 * (1 + tanh(k_smooth_sym * (v_Bot_sym - v_Tresh_sym)));
+C_Frb_sym = p_mue_g * p_m_ges * p_g * (p_Xi/2);
+Frb_smooth_sym = smooth_factor_sym * C_Frb_sym;
 
-frac_sym = base_frac_sym * (1-smooth_factor_straight_sym) + (p_B_dis / 1e6) * smooth_factor_straight_sym;
+deltaOmega_sym = om_m2-om_m1;
+smooth_abs_DeltaOmega_sym = sqrt(deltaOmega_sym^2 + eta_abs_sq_sym);
+w_sym = 0.5 * (1 + tanh(k_xp_sym*(smooth_abs_DeltaOmega_sym - eps_om_sym)));
 
-% if abs(om_m1 - om_m2) < eps_om
-%     xp_sym = 1e6;  % quasi geradeaus
-% else
-%     xp_sym = (p_Achsabstand/2)*((om_m1 + om_m2)/(om_m2 - om_m1));
-% end
-% 
-% frac_sym = p_B_dis/xp_sym;
-Frb_sym = sign(v_Bot_sym)*go_sym*p_mue_g *p_m_ges * p_g * (p_Xi/2);
-calpha_sym = frac_sym * sqrt(1+frac_sym^2)/(1+frac_sym^2);
-salpha_sym = sqrt(1+frac_sym^2)/(1+frac_sym^2);
-Tr1_sym = - p_Reifen_Radius * Frb_sym * salpha_sym-((2*p_Reifen_Radius)/p_Achsabstand)*Frb_sym*calpha_sym*(1-p_Xi)*p_B_dis;
-Tr2_sym = - p_Reifen_Radius * Frb_sym * salpha_sym+((2*p_Reifen_Radius)/p_Achsabstand)*Frb_sym*calpha_sym*(1-p_Xi)*p_B_dis;
+inv_xp_A_const_sym = 1e-6;
 
-M_belastungen_sym = [p_Motoruebersetzung * p_motor_Drehmomentkoef * i_m1 - p_Motoruebersetzung^2 * p_motor_Daempfung*om_m1+ Tr1_sym;
-                     p_Motoruebersetzung * p_motor_Drehmomentkoef * i_m2 - p_Motoruebersetzung^2 * p_motor_Daempfung*om_m2+ Tr2_sym];
+inv_xp_B_turn_nun_sym = (2/p_Achsabstand) * deltaOmega_sym * OmegaSum_sym;
+inv_xp_B_turn_dun_sym = OmegaSum_sym^2 + delta_sig_sq_sym;
+inv_xp_B_turn_sym = inv_xp_B_turn_nun_sym / inv_xp_B_turn_dun_sym;
+
+inv_xp_smooth_sym = (1-w_sym) * inv_xp_A_const_sym + w_sym * inv_xp_B_turn_sym;
+
+frac_smooth_sym = p_B_dis * inv_xp_smooth_sym;
+
+nenner_sc_alpha_sym = sqrt(1+ frac_smooth_sym^2);
+salpha_smooth_sym = 1 / nenner_sc_alpha_sym;
+calpha_smooth_sym = frac_smooth_sym / nenner_sc_alpha_sym;
+
+C_Tr_sym = (2 * p_Reifen_Radius/p_Achsabstand) * (1-p_Xi) * p_B_dis;
+
+Tr1_smooth_sym = -Frb_smooth_sym * (p_Reifen_Radius * salpha_smooth_sym + C_Tr_sym * calpha_smooth_sym);
+Tr2_smooth_sym = -Frb_smooth_sym * (p_Reifen_Radius * salpha_smooth_sym - C_Tr_sym * calpha_smooth_sym);
+
+M_belastungen_sym = [p_Motoruebersetzung * p_motor_Drehmomentkoef * i_m1 - p_Motoruebersetzung^2 * p_motor_Daempfung*om_m1+ Tr1_smooth_sym;
+                     p_Motoruebersetzung * p_motor_Drehmomentkoef * i_m2 - p_Motoruebersetzung^2 * p_motor_Daempfung*om_m2+ Tr2_smooth_sym];
 
 om_dot_sym = inv(J_g_sym) * M_belastungen_sym;
 
@@ -248,49 +254,45 @@ M22 = M11;
 J_g = [M11 M12;
        M21 M22];
 
-v_Bot = (Reifen_Radius/2)*(om_m1+om_m2);
-k_go = 1000; %steilheit für Übergang von 0 nach 1-> Fkt muss glatt sein
-v_tresh = 1e-3;
-go= 0.5 * (1 + tanh(k_go * (v_Bot - v_tresh)));  % Übergang für Reibkraft, muss glatt sein, funktioniert nur mit v>0!!!!!!
+v_Tresh = 1e-3;
+k_smooth = 5000;
 
-%Glätten der Funktion
-delta_om = om_m2-om_m1;
-sum_om = om_m2+ om_m1;
-eps_om = 1e-9;
-k_sum_om = 1000;
-sum_om_safe = sum_om + tanh(k_sum_om * sum_om) * eps_om +eps_om;
-base_frac = (2 * B_dis /Achsabstand) * delta_om / sum_om_safe;
+eps_om = 1e-6;
+eta_abs_sq = (eps_om/10)^2;
+k_xp = 5 / eps_om;
+delta_sig_sq = 1e-6;
 
-k_smooth_frac = 1000;
-smooth_factor_straight = 0.5 * (1 - tanh(k_smooth_frac * (delta_om^2-eps_om^2)));
+OmegaSum = om_m1 + om_m2;
+v_Bot = (Reifen_Radius/2)*OmegaSum;
+smooth_factor = 0.5 * (1 + tanh(k_smooth * (v_Bot - v_Tresh)));
+C_Frb = mue_g * m_ges * g * (Xi/2);
+Frb_smooth = smooth_factor * C_Frb;
 
-frac = base_frac * (1-smooth_factor_straight) + (B_dis / 1e6) * smooth_factor_straight;
+deltaOmega = om_m2-om_m1;
+smooth_abs_DeltaOmega = sqrt(deltaOmega^2 + eta_abs_sq);
+w = 0.5 * (1 + tanh(k_xp*(smooth_abs_DeltaOmega - eps_om)));
 
+inv_xp_A_const = 1e-6;
 
-% v_Bot = (Reifen_Radius/2)*(om_m1+om_m2);
-% if v_Bot < 1e-3
-%     go = 0;  % quasi stillstehend
-% else
-%     go = 1;
-% end
-% 
-% eps_om = 1e-6;
-% if abs(om_m1 - om_m2) < eps_om
-%     xp = 1e6;  % quasi geradeaus
-% else
-%     xp = (Achsabstand/2)*((om_m1 + om_m2)/(om_m2 - om_m1));
-% end
-% 
-% frac = B_dis/xp;
+inv_xp_B_turn_nun = (2/Achsabstand) * deltaOmega * OmegaSum;
+inv_xp_B_turn_dun = OmegaSum^2 + delta_sig_sq;
+inv_xp_B_turn = inv_xp_B_turn_nun / inv_xp_B_turn_dun;
 
-Frb = sign(v_Bot)*go*mue_g *m_ges * g * (Xi/2);
-calpha = frac * sqrt(1+frac^2)/(1+frac^2);
-salpha = sqrt(1+frac^2)/(1+frac^2);
-Tr1 = - Reifen_Radius * Frb * salpha-((2*Reifen_Radius)/Achsabstand)*Frb*calpha*(1-Xi)*B_dis;
-Tr2 = - Reifen_Radius * Frb * salpha+((2*Reifen_Radius)/Achsabstand)*Frb*calpha*(1-Xi)*B_dis;
+inv_xp_smooth = (1-w) * inv_xp_A_const + w * inv_xp_B_turn;
 
-M_belastungen = [Motoruebersetzung * motor_Drehmomentkoef * i_m1 - Motoruebersetzung^2 * motor_Daempfung*om_m1 + Tr1;
-                 Motoruebersetzung * motor_Drehmomentkoef * i_m2 - Motoruebersetzung^2 * motor_Daempfung*om_m2 + Tr2];
+frac_smooth = B_dis * inv_xp_smooth;
+
+nenner_sc_alpha = sqrt(1+ frac_smooth^2);
+salpha_smooth = 1 / nenner_sc_alpha;
+calpha_smooth = frac_smooth / nenner_sc_alpha;
+
+C_Tr = (2 * Reifen_Radius/Achsabstand) * (1-Xi) * B_dis;
+
+Tr1_smooth = -Frb_smooth * (Reifen_Radius * salpha_smooth + C_Tr * calpha_smooth);
+Tr2_smooth = -Frb_smooth * (Reifen_Radius * salpha_smooth - C_Tr * calpha_smooth);
+
+M_belastungen = [Motoruebersetzung * motor_Drehmomentkoef * i_m1 - Motoruebersetzung^2 * motor_Daempfung*om_m1 + Tr1_smooth;
+                 Motoruebersetzung * motor_Drehmomentkoef * i_m2 - Motoruebersetzung^2 * motor_Daempfung*om_m2 + Tr2_smooth];
 
 om_dot = J_g \ M_belastungen;
 
