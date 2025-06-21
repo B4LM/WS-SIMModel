@@ -22,7 +22,7 @@ motor_traegheit = 0.847 * 10^-6;    % [kg*m^2]
 motor_Induktivitaet = 0.0002;       % [H]
 motor_Widerstand =  13.33;          % [Ohm]
 motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4];
-motor_Drehmomentkoef = 0.0174;      % [N*m / A]
+motor_Drehmomentkoef = 0.0035;      % [N*m / A]                     old: 0.0174;
 motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 %% Modellgleichungen in eingeschwungenem Zustand
@@ -71,8 +71,8 @@ C_Tr = (2 * Reifen_Radius/Achsabstand) * (1-Xi) * B_dis;
 Tr1_smooth = -Frb_smooth * (Reifen_Radius * salpha_smooth + C_Tr * calpha_smooth);
 Tr2_smooth = -Frb_smooth * (Reifen_Radius * salpha_smooth - C_Tr * calpha_smooth);
 
-M_belastungen = [Motoruebersetzung * motor_Drehmomentkoef * i1 - Motoruebersetzung^2 * motor_Daempfung*om1 + Tr1_smooth;
-                 Motoruebersetzung * motor_Drehmomentkoef * i2 - Motoruebersetzung^2 * motor_Daempfung*om2 + Tr2_smooth];
+M_belastungen = [Motoruebersetzung * motor_Drehmomentkoef * i1 - Motoruebersetzung^2 * motor_Daempfung*om1; % + Tr1_smooth;
+                 Motoruebersetzung * motor_Drehmomentkoef * i2 - Motoruebersetzung^2 * motor_Daempfung*om2]; % + Tr2_smooth];
 
 eq3 = M_belastungen(1) == 0;
 eq4 = M_belastungen(2) == 0;
@@ -85,3 +85,46 @@ x_sol = [sol.i1; sol.om1; sol.i2; sol.om2];
 v_Bot = (Reifen_Radius/2) * (x_sol(2) + x_sol(4));
 v_Bot_num = double(subs(v_Bot));
 disp(v_Bot_num)
+
+% clc; clear; close all;
+% 
+% %% 1. Parameter (nur die Nötigsten)
+% U = 5; % [V]
+% 
+% % Motor
+% R_m = 13.33; % [Ohm]
+% Kb = 0.0035; % [V*s/rad]
+% Kt = 0.0035; % [N*m/A]
+% D_m = 9.12e-8; % [N*m*s/rad]
+% 
+% % Getriebe & Fahrzeug
+% n = 100; % Übersetzung
+% r = 0.04; % Reifenradius [m]
+% mue_g = 0.1;
+% m_ges = 1; % [kg]
+% g = 9.81;
+% Xi = 2/3;
+% 
+% %% 2. Gleichungen (sauber und einfach)
+% syms i_m om_m % Nur 2 Variablen für Geradeausfahrt
+% 
+% % Elektrisches Gleichgewicht
+% eq1 = U == R_m * i_m + Kb * om_m;
+% 
+% % Mechanisches Gleichgewicht (Momente am Rad)
+% M_antrieb_rad = n * Kt * i_m;
+% M_daempfung_rad = n^2 * D_m * om_m; % Korrekte n²-Regel
+% M_reibung_rad = (mue_g * m_ges * g * Xi / 2) * r;
+% 
+% eq2 = M_antrieb_rad == M_daempfung_rad + M_reibung_rad;
+% 
+% %% 3. Lösen und Ergebnis ausgeben
+% sol = solve([eq1, eq2], [i_m, om_m]);
+% 
+% omega_motor_final = double(sol.om_m);
+% omega_rad_final = omega_motor_final / n;
+% v_final = omega_rad_final * r;
+% 
+% fprintf('Berechnete Motordrehzahl: %.1f rad/s\n', omega_motor_final);
+% fprintf('Berechnete Endgeschwindigkeit: %.3f m/s\n', v_final);
+

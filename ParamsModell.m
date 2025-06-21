@@ -25,7 +25,7 @@ motor_traegheit = 0.847 * 10^-6;    % [kg*m^2]
 motor_Induktivitaet = 0.0002;       % [H]
 motor_Widerstand =  13.33;          % [Ohm]
 motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4];
-motor_Drehmomentkoef = 0.0174;      % [N*m / A]
+motor_Drehmomentkoef = 0.0035;      % [N*m / A]                     old: 0.0174;
 motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 %% Startwerte
