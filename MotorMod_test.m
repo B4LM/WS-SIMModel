@@ -4,7 +4,7 @@ motorinertia = 0.847 * 10^-6;        % [kg*m^2]
 motorinductivity = 0.0002;       % [H]
 motorresistance =  13.33;            % [Ohm]
 motordamping = 9.12 * 10^-8;          % [N*m*s][7.216 * 10^-4];
-motortorquekoef = 0.0174;      % [N*m / A]
+motortorquekoef = 0.0035;      % [N*m / A]
 motorBackEMFkoef = 0.0035;     % [V*s / rad]
 %V_brush = 1;                         % [V]
 
