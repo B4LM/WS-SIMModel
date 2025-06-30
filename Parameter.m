@@ -4,50 +4,24 @@ clc; clear; close all;
 
 g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
-m_last = 0.424;               % [kg]
 Achsabstand = 0.15;          % [m]    
 Motoruebersetzung = 100;     % [1]
 B_dis = 0.25;                % [m]
-R_dis = 0.15;                % [m]
 Xi = 2/3;                    % [1]
 I_Bot = 0.0072;              % [kg*m^2]
-mue_g = 0.35;                % [1]
-
-startPos = [0.3;0.3];
-waypoint = [1;1.2];
+mue_g = 0.1;                 % [1]
+Reifen_Radius = 0.04;        % [m]
+I_Reifen = 1.8 * 10^-5;      % [kg*m^2]
 
 
 %% Motormodell
 
-% motorinertia = 0.847 * 10^-6;  % [kg*m^2] 
-% motorinductivity = 0.0005;     % [H]
-% motorresistance =  3;          % [Ohm]
-% %motordamping = 2.5* 10^-6;    % [N*m*s] [0.005-> alt] [1.2 * 10^-6;]
-% motordamping = 0;    % [N*m*s] [0.005-> alt] [1.2 * 10^-6;]
-% motortorquekoef = 0.065;      % [N*m / A] [0.06533-> alt] [0.00174] [0.0019]
-% motorBackEMFkoef = 0.065;     % [V*s / rad] [0.06533-> alt][0.0019]
-
-% motorinertia = 5 * 10^-8;       % [kg*m^2] 
-% motorinductivity = 100 *10^-6;  % [H]
-% motorresistance =  13.33;       % [Ohm]
-% motordamping = 7.216 * 10^-4;    % [N*m*s]
-% motortorquekoef = 0.302;      % [N*m / A]
-% motorBackEMFkoef = 0.302;     % [V*s / rad]
-% V_brush = 1.5;                  % [V]
-
-motorinertia = 0.847 * 10^-6;        % [kg*m^2] 
-motorinductivity = 0.0002;       % [H]
-motorresistance =  13.33;            % [Ohm]
-motordamping = 9.12 * 10^-8;          % [N*m*s][7.216 * 10^-4];
-motortorquekoef = 0.0174;      % [N*m / A]
-motorBackEMFkoef = 0.0035;     % [V*s / rad]
-
-%% Reifenmodell
-
-m_Reifen = 0.038;             % [kg]
-mue = 0.002;                 % [1]
-Reifen_Radius = 0.04;        % [m]
-
+motor_traegheit = 0.847 * 10^-6;    % [kg*m^2] 
+motor_Induktivitaet = 0.0002;       % [H]
+motor_Widerstand =  13.33;          % [Ohm]
+motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4];
+motor_Drehmomentkoef = 0.0035;      % [N*m / A]                     old: 0.0174;
+motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 %% motor state space model
 
 % A_alt = [0 1 0; 0 -motordamping/motorinertia motortorquekoef/motorinertia;0 -motorBackEMFkoef/motorinductivity -motorresistance/motorinductivity];
