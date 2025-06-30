@@ -57,6 +57,11 @@ walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zi
 setOccupancy(myMap,[1 1], walls, "grid")
 show(myMap)
 
+%% Motor test
+
+x_0Motor = [0;0];
+
+
 
 
 

@@ -4,7 +4,7 @@ clc; clear; close all;
 %kurvige Fahrt
 
 %% Eingangsspannungen
-U1 = 12; %[V]
+U1 = 5; %[V]
 U2 = 5; %[V]
 
 %% Modellparameter
@@ -86,6 +86,5 @@ x_sol = [sol.i1; sol.om1; sol.i2; sol.om2];
 v_Bot = (Reifen_Radius/2) * (x_sol(2) + x_sol(4));
 v_Bot_num = double(subs(v_Bot));
 disp(v_Bot_num);
-g=0;
 ValOm = (2*Motoruebersetzung*motor_Drehmomentkoef*U1-mue_g*m_ges*g*Xi*motor_Widerstand*Reifen_Radius)/(2*(Motoruebersetzung*motor_Drehmomentkoef*motor_BackEMFkoef+Motoruebersetzung^2*motor_Daempfung*motor_Widerstand))
 ValVel = ValOm*Reifen_Radius;
