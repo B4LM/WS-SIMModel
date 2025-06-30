@@ -30,9 +30,9 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 %% Startwerte
 x0s = [0;
+       11.701;    %0->start omega1
        0;
-       0;
-       0;
+       11.701;    %0->start omega2
        StartPos(1);
        StartPos(2);
        0;];
