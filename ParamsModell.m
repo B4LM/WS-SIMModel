@@ -24,15 +24,15 @@ I_Reifen = 1.8 * 10^-5;      % [kg*m^2]
 motor_traegheit = 0.847 * 10^-6;    % [kg*m^2] 
 motor_Induktivitaet = 0.0002;       % [H]
 motor_Widerstand =  13.33;          % [Ohm]
-motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4];
+motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4; 9.12 * 10^-8];
 motor_Drehmomentkoef = 0.0035;      % [N*m / A]                     old: 0.0174;
 motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 %% Startwerte
 x0s = [0;
-       11.701;    %0->start omega1
+       0;    %0->start omega1 | 11.701
        0;
-       11.701;    %0->start omega2
+       0;    %0->start omega2 | 11.701
        StartPos(1);
        StartPos(2);
        0;];
