@@ -1,7 +1,7 @@
- clc; clear; close all; 
+ clear; close all; % clc;
 
 %Modellvalidierung bei eingeschwndgenem Zustand-> konstante gerade und
-%kurvige Fahrt
+%drehen an Stelle
 
 %% Modellparameter
 g = 9.81;                    % [m/s^2]
@@ -27,7 +27,7 @@ L_B = 0.12;
 U = 5; %[V]
 
 %mit Reibkräften
-om_straight_Frb = (-Reifen_Radius*motor_Widerstand*mue_g*m_ges*Xi*g+Motoruebersetzung*motor_Drehmomentkoef*U)/(Motoruebersetzung^2*(motor_Widerstand*motor_Daempfung+motor_BackEMFkoef*motor_Drehmomentkoef));
+om_straight_Frb = (-Reifen_Radius*motor_Widerstand*mue_g*m_ges*(Xi/2)*g+Motoruebersetzung*motor_Drehmomentkoef*U)/(Motoruebersetzung^2*(motor_Widerstand*motor_Daempfung+motor_BackEMFkoef*motor_Drehmomentkoef));
 vel_straight_Frb = om_straight_Frb*Reifen_Radius;
 
 %ohne Reibkräften
@@ -39,28 +39,25 @@ U = 5; %[V]
 %%%
 B1 = [(1-Xi)*B_dis; L_B/2];
 B2 = [(1-Xi)*B_dis; -L_B/2];
-xppos = [0.5; 0];
+xppos = [-Xi*B_dis; 0];
+
 B1xp = xppos - B1;
 B2xp = xppos - B2;
-Fb1_dir = [-B1xp(2);B1xp(1)];
-Fb2_dir = [-B2xp(2);B2xp(1)];
+Fb1_dir = [B1xp(2);-B1xp(1)];
+Fb2_dir = [B2xp(2);-B2xp(1)];
 Fb1_dir_unit = Fb1_dir / norm(Fb1_dir);
 Fb2_dir_unit = Fb2_dir / norm(Fb2_dir);
-
-d1n = -(B1(1)*Fb1_dir_unit(2)-B1(2)*Fb1_dir_unit(1))/sqrt(Fb1_dir_unit(1)^2+Fb1_dir_unit(2)^2)
-d2n = (B2(1)*Fb2_dir_unit(2)-B2(2)*Fb2_dir_unit(1))/sqrt(Fb2_dir_unit(1)^2+Fb2_dir_unit(2)^2)
-%%%
-%alpha = atan(L_B/(2*B_dis))+(pi/2);
-%d1 = Xi*B_dis * sin(alpha) + (L_B/2) * cos(alpha)
-%d2 = -(Xi*B_dis * sin(alpha) - (L_B/2) * cos(alpha))
-
-% d1 = Xi*B_dis * cos(alpha) + (L_B/2) * sin(alpha)
-% d2 = -(Xi*B_dis * cos(alpha) - (L_B/2) * sin(alpha))
-FRB_stern = (mue_g*m_ges*g*Xi*2*(d1n+d2n)/Achsabstand);
+FRB = mue_g*m_ges*g*(Xi/2);
+FRB1 = FRB*Fb1_dir_unit;
+FRB2 = FRB*Fb2_dir_unit;
+M_FR1 = cross([B1;0],[FRB1;0]);
+M_FR1 = M_FR1(3);
+M_FR2 = cross([B2;0],[FRB2;0]);
+M_FR2 = M_FR2(3);
 
 %mit Reibkräften
-om_turn_Frb = (-Reifen_Radius*motor_Widerstand*FRB_stern+Motoruebersetzung*motor_Drehmomentkoef*U)/(Motoruebersetzung^2*(motor_Widerstand*motor_Daempfung+motor_BackEMFkoef*motor_Drehmomentkoef));
-om_bot_Frb = (2*om_turn_Frb*Reifen_Radius)/Achsabstand
+om_turn_Frb = (-motor_Widerstand*(M_FR1+M_FR2)*(Reifen_Radius/Achsabstand)+Motoruebersetzung*motor_Drehmomentkoef*U)/(Motoruebersetzung^2*(motor_Widerstand*motor_Daempfung+motor_BackEMFkoef*motor_Drehmomentkoef));
+om_bot_Frb = (2*om_turn_Frb*Reifen_Radius)/Achsabstand;
 
 %ohne Reibkräften
 om_turn = (Motoruebersetzung*motor_Drehmomentkoef*U)/(Motoruebersetzung^2*(motor_Widerstand*motor_Daempfung+motor_BackEMFkoef*motor_Drehmomentkoef));
