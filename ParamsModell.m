@@ -1,5 +1,5 @@
 clc; clear; close all; 
-% Modell 2 -> ohne Schleifblöcke
+%für beide Modelle
 
 %% general
 
@@ -13,7 +13,7 @@ I_Bot = 0.0072;              % [kg*m^2]
 mue_g = 0.1;                 % [1]
 Reifen_Radius = 0.04;        % [m]
 I_Reifen = 1.8 * 10^-5;      % [kg*m^2]
-L_B = 0.12;                    % [m]
+L_B = 0.12;                  % [m]
 
 
 %% Motormodell
@@ -32,9 +32,9 @@ Zielpunkt = [1;1.2];
 
 %% Startwerte
 x0s = [0;
-       0;    %0->start omega1 | 11.701
        0;
-       0;    %0->start omega2 | 11.701
+       0;
+       0;
        StartPos(1);
        StartPos(2);
        0;];
@@ -58,11 +58,6 @@ walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zi
 
 setOccupancy(myMap,[1 1], walls, "grid")
 show(myMap)
-
-%% Motor test
-
-x_0Motor = [0;0];
-
 
 
 
