@@ -2,7 +2,6 @@ clc; clear; close all;
 %für beide Modelle
 
 %% general
-
 g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
 Achsabstand = 0.15;          % [m]    
