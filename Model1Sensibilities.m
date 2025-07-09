@@ -145,9 +145,9 @@ omega_Tresh_sym = 1e-3;
 % Grenzwinkelgeschwindigkeits-Unterschied
 eps_om_sym = 1e-6;
 % Steigungen für Glättungsfunktionen
-k_smooth_sym = 5000;
+k_smooth_sym = 500; %5000
 k_xppos_sym = 100;
-k_xp_sym = 5 / eps_om_sym;
+k_xp_sym = 500; %5 / eps_om_sym
 % konstante Nenner-Erwiterungen für Singlaritäten
 delta_sig_sq_sym = 1e-6;
 xp_delta_sym = 1e-6;
@@ -227,17 +227,20 @@ vy_sym = (p_Reifen_Radius/2) * (om_m1 + om_m2) * sin(theta);
 dthetadt_sym = (p_Reifen_Radius/p_Achsabstand) * (om_m2-om_m1);
 
 xdot_sym = [di1dt_sym;dom1dt_sym;di2dt_sym;dom2dt_sym;vx_sym;vy_sym;dthetadt_sym];
+disp("symdone!")
 
 %% A and B matrix
 
 A_jacobian_sym = jacobian(xdot_sym,x_sym);
+disp('A_jacobian_sym done')
+J_pattern_sym = (A_jacobian_sym ~= 0);
+J_pattern = double(J_pattern_sym);
 B_jacobian_sym = jacobian(xdot_sym,params_sym);
-tic
+disp('B_jacobian_sym done')
 A_fun = matlabFunction(A_jacobian_sym,'Vars',{x_sym,u_sym,params_sym_ordered{:}});
-toc
-tic
+disp('A_fun done')
 B_fun = matlabFunction(B_jacobian_sym,'Vars',{x_sym,u_sym,params_sym_ordered{:}});
-tic
+disp('B_fun done')
 
 %% Startwerte
 x0 = [0;
@@ -250,10 +253,38 @@ x0 = [0;
 
 S0 = zeros(7,pnum);
 X_aug_0 = [x0;S0(:)];
+%% Codegen init
+disp('Starte Codegen-Prozess...');
+
+ARGS = { ...
+    coder.typeof(zeros(7,1)), ... % x (Zustandsvektor)
+    coder.typeof(zeros(2,1)), ... % u (Eingangsvektor)
+    coder.typeof(1.0), ...        % Motoruebersetzung (Skalar)
+    coder.typeof(1.0), ...        % motor_traegheit
+    coder.typeof(1.0), ...        % m_ges
+    coder.typeof(1.0), ...        % Reifen_Radius
+    coder.typeof(1.0), ...        % I_Bot
+    coder.typeof(1.0), ...        % Achsabstand
+    coder.typeof(1.0), ...        % motor_Drehmomentkoef
+    coder.typeof(1.0), ...        % motor_Daempfung
+    coder.typeof(1.0), ...        % motor_Widerstand
+    coder.typeof(1.0), ...        % motor_Induktivitaet
+    coder.typeof(1.0), ...        % motor_BackEMFkoef
+    coder.typeof(1.0), ...        % mue_g
+    coder.typeof(1.0), ...        % g
+    coder.typeof(1.0), ...        % Xi
+    coder.typeof(1.0), ...        % B_dis
+    coder.typeof(1.0), ...        % I_Reifen
+    coder.typeof(1.0)  ...        % L_B
+};
+
+codegen PSA_dynamics_codegen -args ARGS -report
+
+disp('Codegen abgeschlossen. Starte ODE-Simulation...');
 
 %% ODE-Sim
-
-options = odeset('RelTol',1e-6,'AbsTol',1e-8);
+A_handle = @(t, x) A_fun(x, U_sim, p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen,p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g, p_struct.L_B);
+options = odeset('RelTol',1e-3, 'Jacobian', A_handle, 'JPattern', J_pattern);%,'AbsTol',auto
 [T,X_aug_sol] = ode15s(@(t, X_aug) AugmentedDynamics(t, X_aug, U_sim, p_struct, A_fun, B_fun, pnum), t_span, X_aug_0, options);
 
 x_traj = X_aug_sol(:,1:7);
@@ -450,9 +481,9 @@ omega_Tresh = 1e-3;
 % Grenzwinkelgeschwindigkeits-Unterschied
 eps_om = 1e-6;
 % Steigungen für Glättungsfunktionen
-k_smooth = 5000;
+k_smooth = 500; %5000
 k_xppos = 100;
-k_xp = 5 / eps_om;
+k_xp = 500;% 5 / eps_om_sym
 % konstante Nenner-Erwiterungen für Singlaritäten
 delta_sig_sq = 1e-6;
 xp_delta = 1e-6;
@@ -540,7 +571,7 @@ function dX_aug_dt = AugmentedDynamics(t, X_aug, u, p_struct, A_fun, B_fun,pnum)
 x = X_aug(1:7);
 S_matrix = reshape(X_aug(8:end),7,pnum);
 
-x_dot = Dynamics(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung,p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef,p_struct.I_Reifen, p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g);
+x_dot = PSA_dynamics_codegen(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung,p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef,p_struct.I_Reifen, p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g);
 A_jacobian = A_fun(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen, p_struct.mue_g, p_struct.Xi, p_struct.B_dis,p_struct.g);
 B_jacobian = B_fun(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen, p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g);
 
@@ -553,6 +584,8 @@ end
 dX_aug_dt = [x_dot; S_dot_matrix(:)];
 disp(t)
 end
+
+
 
 
 
