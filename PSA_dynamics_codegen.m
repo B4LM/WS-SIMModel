@@ -1,4 +1,4 @@
-function xdot = PSA_dynamics_codegen(x,u,Motoruebersetzung, motor_traegheit, m_ges, Reifen_Radius, I_Bot, Achsabstand, motor_Drehmomentkoef, motor_Daempfung,motor_Widerstand, motor_Induktivitaet, motor_BackEMFkoef,mue_g, g, Xi, B_dis,I_Reifen,L_B)
+function xdot = PSA_dynamics_codegen(x,u,p)
 %#codegen
 
 %x-vec:
@@ -12,11 +12,11 @@ theta = x(7);
 Ue1 = u(1);
 Ue2 = u(2);
 
-J_Mn = Motoruebersetzung^2 * motor_traegheit;
-C1 = (m_ges*Reifen_Radius^2)/4 - (I_Bot*Reifen_Radius^2)/(Achsabstand^2);
-C2 = (m_ges*Reifen_Radius^2)/4 + (I_Bot*Reifen_Radius^2)/(Achsabstand^2);
+J_Mn = p.Motoruebersetzung^2 * p.motor_traegheit;
+C1 = (p.m_ges*p.Reifen_Radius^2)/4 - (p.I_Bot*p.Reifen_Radius^2)/(p.Achsabstand^2);
+C2 = (p.m_ges*p.Reifen_Radius^2)/4 + (p.I_Bot*p.Reifen_Radius^2)/(p.Achsabstand^2);
 
-M11 = J_Mn + C1 + I_Reifen;
+M11 = J_Mn + C1 + p.I_Reifen;
 M12 = C2;
 M21 = M12;
 M22 = M11;
@@ -40,8 +40,8 @@ xp_delta = 1e-6;
 eta_abs_sq = (eps_om/10)^2;
 
 % Angriffspunkte der Reibngskräfte
-B1 = [(1-Xi)*B_dis; L_B/2];
-B2 = [(1-Xi)*B_dis; -L_B/2];
+B1 = [(1-p.Xi)*p.B_dis; p.L_B/2];
+B2 = [(1-p.Xi)*p.B_dis; -p.L_B/2];
 
 % Berechnung der reibungskraft-Angriffswinkel über Ermittlung von
 % Geschwindigkeitspol xp
@@ -49,13 +49,13 @@ OmegaSum = om_m1 + om_m2;
 deltaOmega = om_m2-om_m1;
 smooth_abs_DeltaOmega = sqrt(deltaOmega^2 + eta_abs_sq);
 
-v_Bot = (Reifen_Radius/2)*OmegaSum;
-omega_Bot = (Reifen_Radius/Achsabstand)*smooth_abs_DeltaOmega;
+v_Bot = (p.Reifen_Radius/2)*OmegaSum;
+omega_Bot = (p.Reifen_Radius/p.Achsabstand)*smooth_abs_DeltaOmega;
 
 % Glättungsfunktionen für Reibungskraft-> keine Reibung bei v_Bot / omega_Bot =0
 smooth_factor_straight = 0.5 * (1 + tanh(k_smooth * (v_Bot - v_Tresh)));
 smooth_factor_spin = 0.5 * (1 + tanh(k_smooth * (omega_Bot - omega_Tresh)));
-C_Frb = mue_g * m_ges * g * (Xi/2);
+C_Frb = p.mue_g * p.m_ges * p.g * (p.Xi/2);
 Frb_smooth_straight = smooth_factor_straight * C_Frb;
 Frb_smooth_spin = smooth_factor_spin * C_Frb;
 
@@ -64,15 +64,15 @@ w = 0.5 * (1 + tanh(k_xp*(smooth_abs_DeltaOmega - eps_om)));
 
 inv_xp_A_const = 1e-6;
 
-inv_xp_B_turn_nun = (2/Achsabstand) * deltaOmega * OmegaSum;
+inv_xp_B_turn_nun = (2/p.Achsabstand) * deltaOmega * OmegaSum;
 inv_xp_B_turn_dun = OmegaSum^2 + delta_sig_sq;
 inv_xp_B_turn = inv_xp_B_turn_nun / inv_xp_B_turn_dun;
 
 inv_xp_smooth = (1-w) * inv_xp_A_const + w * inv_xp_B_turn;
 xp_smooth = 1./(inv_xp_smooth+xp_delta);
 
-xppos_translation = [-Xi*B_dis; xp_smooth];
-xppos_turnonpint = [-Xi*B_dis; 0];
+xppos_translation = [-p.Xi*p.B_dis; xp_smooth];
+xppos_turnonpint = [-p.Xi*p.B_dis; 0];
 
 s = 1- tanh((k_xppos * OmegaSum)^2);
 xppos = (1-s)* xppos_translation + s * xppos_turnonpint;
@@ -94,23 +94,22 @@ M_FR2v = cross([B2;0],[FRB2spin;0]);
 M_FR2 = M_FR2v(3);
 
 % Gesamte Momenten-Belastung aufgrund der reibung bei Kontaktpunkten
-Tr1_smooth = -(Frb_smooth_straight* Reifen_Radius/2) * (Fb1_dir_unit(1) + Fb2_dir_unit(1)) + w*(Reifen_Radius/Achsabstand)*(M_FR1+M_FR2);
-Tr2_smooth = -(Frb_smooth_straight* Reifen_Radius/2) * (Fb1_dir_unit(1) + Fb2_dir_unit(1)) - w*(Reifen_Radius/Achsabstand)*(M_FR1+M_FR2);
+Tr1_smooth = -(Frb_smooth_straight* p.Reifen_Radius/2) * (Fb1_dir_unit(1) + Fb2_dir_unit(1)) + w*(p.Reifen_Radius/p.Achsabstand)*(M_FR1+M_FR2);
+Tr2_smooth = -(Frb_smooth_straight* p.Reifen_Radius/2) * (Fb1_dir_unit(1) + Fb2_dir_unit(1)) - w*(p.Reifen_Radius/p.Achsabstand)*(M_FR1+M_FR2);
 
 % Gesamte Belastungen an den Motoren
-M_belastungen = [Motoruebersetzung * motor_Drehmomentkoef * i_m1 - Motoruebersetzung^2 * motor_Daempfung*om_m1 + Tr1_smooth;
-                 Motoruebersetzung * motor_Drehmomentkoef * i_m2 - Motoruebersetzung^2 * motor_Daempfung*om_m2 + Tr2_smooth];
+M_belastungen = [p.Motoruebersetzung * p.motor_Drehmomentkoef * i_m1 - p.Motoruebersetzung^2 * p.motor_Daempfung*om_m1 + Tr1_smooth;
+                 p.Motoruebersetzung * p.motor_Drehmomentkoef * i_m2 - p.Motoruebersetzung^2 * p.motor_Daempfung*om_m2 + Tr2_smooth];
 
 % Bestimmung von Winkelbeschleunigungen der Motoren
 om_dot = J_g \ M_belastungen;
 
-di1dt = -(motor_Widerstand/motor_Induktivitaet) * i_m1 - (Motoruebersetzung * motor_BackEMFkoef/motor_Induktivitaet) * om_m1 + (1/motor_Induktivitaet)* Ue1;
+di1dt = -(p.motor_Widerstand/p.motor_Induktivitaet) * i_m1 - (p.Motoruebersetzung * p.motor_BackEMFkoef/p.motor_Induktivitaet) * om_m1 + (1/p.motor_Induktivitaet)* Ue1;
 dom1dt = om_dot(1);
-di2dt = -(motor_Widerstand/motor_Induktivitaet) * i_m2 - (Motoruebersetzung * motor_BackEMFkoef/motor_Induktivitaet) * om_m2 + (1/motor_Induktivitaet)* Ue2;
+di2dt = -(p.motor_Widerstand/p.motor_Induktivitaet) * i_m2 - (p.Motoruebersetzung * p.motor_BackEMFkoef/p.motor_Induktivitaet) * om_m2 + (1/p.motor_Induktivitaet)* Ue2;
 dom2dt = om_dot(2);
-vx = (Reifen_Radius/2) * (om_m1 + om_m2) * cos(theta);
-vy = (Reifen_Radius/2) * (om_m1 + om_m2) * sin(theta);
-dthetadt = (Reifen_Radius/Achsabstand) * (om_m2-om_m1);
+vx = (p.Reifen_Radius/2) * (om_m1 + om_m2) * cos(theta);
+vy = (p.Reifen_Radius/2) * (om_m1 + om_m2) * sin(theta);
+dthetadt = (p.Reifen_Radius/p.Achsabstand) * (om_m2-om_m1);
 
 xdot = [di1dt;dom1dt;di2dt;dom2dt;vx;vy;dthetadt];
-

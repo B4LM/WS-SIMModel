@@ -54,31 +54,15 @@ disp('Starte Codegen-Prozess...');
 ARGS = { ...
     coder.typeof(zeros(7,1)), ... % x (Zustandsvektor)
     coder.typeof(zeros(2,1)), ... % u (Eingangsvektor)
-    coder.typeof(1.0), ...        % Motoruebersetzung (Skalar)
-    coder.typeof(1.0), ...        % motor_traegheit
-    coder.typeof(1.0), ...        % m_ges
-    coder.typeof(1.0), ...        % Reifen_Radius
-    coder.typeof(1.0), ...        % I_Bot
-    coder.typeof(1.0), ...        % Achsabstand
-    coder.typeof(1.0), ...        % motor_Drehmomentkoef
-    coder.typeof(1.0), ...        % motor_Daempfung
-    coder.typeof(1.0), ...        % motor_Widerstand
-    coder.typeof(1.0), ...        % motor_Induktivitaet
-    coder.typeof(1.0), ...        % motor_BackEMFkoef
-    coder.typeof(1.0), ...        % mue_g
-    coder.typeof(1.0), ...        % g
-    coder.typeof(1.0), ...        % Xi
-    coder.typeof(1.0), ...        % B_dis
-    coder.typeof(1.0), ...        % I_Reifen
-    coder.typeof(1.0)  ...        % L_B
+    coder.typeof(p_struct)        % p_struct (Parameter-Struktur)
 };
 
 %codegen PSA_dynamics_codegen -args ARGS -report
-codegen('PSA_dynamics_codegen', '-args', ARGS, '-report');
+codegen('PSA_dynamics_codegen','-args', ARGS, '-report');
 
 disp('Codegen abgeschlossen. Starte ODE-Simulation...');
 
-pnum = length(ARGS)-2;
+pnum = numel(fieldnames(p_struct));
 
 %% Startwerte
 x0 = [0;
@@ -93,8 +77,8 @@ S0 = zeros(7,pnum);
 X_aug_0 = [x0;S0(:)];
 
 %% ODE-Sim
-A_handle = @(t, x) A_fun(x, U_sim, p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen,p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g, p_struct.L_B);
-options = odeset('RelTol',1e-3, 'Jacobian', A_handle, 'JPattern', J_pattern);%,'AbsTol',auto
+%A_handle = @(t, x) A_fun(x, U_sim, p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen,p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g, p_struct.L_B);
+options = odeset('RelTol',1e-3, 'AbsTol', 1e-5);%,'AbsTol',auto,, 'Jacobian', A_handle
 [T,X_aug_sol] = ode15s(@(t, X_aug) AugmentedDynamics(t, X_aug, U_sim, p_struct, pnum), t_span, X_aug_0, options);
 
 x_traj = X_aug_sol(:,1:7);
@@ -181,47 +165,40 @@ end
 %% Augmented Dynamics Function
 
 function dX_aug_dt = AugmentedDynamics(t, X_aug, u, p_struct,pnum)
-x = X_aug(1:7);
-S_matrix = reshape(X_aug(8:end),7,pnum);
+    x = X_aug(1:7);
+    S_matrix = reshape(X_aug(8:end),7,pnum);
+    
+    %dynamics_handle = @PSA_dynamics_codegen; 
+    
+    x_dot = PSA_dynamics_codegen(x,u,p_struct);
+    A_jacobian = compute_A_numerical(x, u, p_struct);
+    B_jacobian = compute_B_numerical(x, u, p_struct, pnum);
+    
+    % S_dot_matrix = zeros(7,pnum);
+    % for j = 1:pnum
+    %     S_j = S_matrix(:,j);
+    %     df_dpj = B_jacobian(:,j);
+    %     S_dot_matrix(:,j) = A_jacobian * S_j + df_dpj;
+    % end
+    S_dot_matrix = A_jacobian * S_matrix + B_jacobian;
 
-dynamics_handle = @PSA_dynamics_codegen; 
-
-x_dot = dynamics_handle(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung,p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef,p_struct.I_Reifen, p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g);
-A_jacobian = compute_A_numerical(dynamics_handle, x, u, p_struct);
-B_jacobian = compute_B_numerical(dynamics_handle, x, u, p_struct, p_list);
-
-S_dot_matrix = zeros(7,pnum);
-for j = 1:pnum
-    S_j = S_matrix(:,j);
-    df_dpj = B_jacobian(:,j);
-    S_dot_matrix(:,j) = A_jacobian * S_j + df_dpj;
-end
-dX_aug_dt = [x_dot; S_dot_matrix(:)];
-disp(t)
+    dX_aug_dt = [x_dot; S_dot_matrix(:)];
+    disp(t)
 end
 
 % HILFSFUNKTION 1: Berechnet die Jacobi-Matrix A numerisch
-function A = compute_A_numerical(dynamics_handle, x, u, p_struct)
+function A = compute_A_numerical(x, u, p_struct)
     n = length(x);
     A = zeros(n, n);
     delta = 1e-7; % Kleine Störung
 
-    fx = dynamics_handle(x, u, p_struct.Motoruebersetzung, p_struct.motor_traegheit, ... 
-    p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, ...
-    p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, ...
-    p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen, ...
-    p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g);
+    fx = PSA_dynamics_codegen(x, u, p_struct);
 
     for j = 1:n
         x_perturbed = x;
         x_perturbed(j) = x_perturbed(j) + delta;
         
-        fx_perturbed = dynamics_handle(x_perturbed, u, p_struct.Motoruebersetzung, ...
-        p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, ...
-        p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, ...
-        p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, ...
-        p_struct.motor_BackEMFkoef, p_struct.I_Reifen, p_struct.mue_g, ...
-        p_struct.Xi, p_struct.B_dis, p_struct.g);
+        fx_perturbed = PSA_dynamics_codegen(x_perturbed, u,p_struct);
         
         A(:, j) = (fx_perturbed - fx) / delta;
     end
@@ -229,19 +206,15 @@ end
 
 
 % HILFSFUNKTION 2: Berechnet die Jacobi-Matrix B (Sensitivität zu Parametern) numerisch
-function B = compute_B_numerical(dynamics_handle, x, u, p_struct, p_list)
+function B = compute_B_numerical(x, u, p_struct, pnum)
+    p_list = fieldnames(p_struct);
     n = length(x);
-    p_num = length(p_list);
-    B = zeros(n, p_num);
+    B = zeros(n, pnum);
     delta_rel = 1e-7; % Relative Störung
 
-    fx = dynamics_handle(x, u, p_struct.Motoruebersetzung, p_struct.motor_traegheit, ...
-    p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, ...
-    p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, ...
-    p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen, ...
-    p_struct.mue_g, p_struct.Xi, p_struct.B_dis, p_struct.g);
+    fx = PSA_dynamics_codegen(x, u, p_struct);
 
-    for j = 1:p_num
+    for j = 1:pnum
         p_struct_perturbed = p_struct;
         param_name = p_list{j};
         original_val = p_struct_perturbed.(param_name);
@@ -250,16 +223,125 @@ function B = compute_B_numerical(dynamics_handle, x, u, p_struct, p_list)
         
         p_struct_perturbed.(param_name) = original_val + delta;
         
-        fx_perturbed = dynamics_handle(x, u, p_struct_perturbed.Motoruebersetzung, ...
-        p_struct_perturbed.motor_traegheit, p_struct_perturbed.m_ges, ...
-        p_struct_perturbed.Reifen_Radius, p_struct_perturbed.I_Bot, ...
-        p_struct_perturbed.Achsabstand, p_struct_perturbed.motor_Drehmomentkoef, ...
-        p_struct_perturbed.motor_Daempfung, p_struct_perturbed.motor_Widerstand, ...
-        p_struct_perturbed.motor_Induktivitaet, p_struct_perturbed.motor_BackEMFkoef, ...
-        p_struct_perturbed.I_Reifen, p_struct_perturbed.mue_g, p_struct_perturbed.Xi, ...
-        p_struct_perturbed.B_dis, p_struct_perturbed.g);
+        fx_perturbed = PSA_dynamics_codegen(x, u, p_struct_perturbed);
         
         B(:, j) = (fx_perturbed - fx) / delta;
     end
+end
+
+function xdot = Dynamics(x,u,p)
+%function xdot = Dynamics(x,u,Motoruebersetzung, motor_traegheit, m_ges, Reifen_Radius, I_Bot, Achsabstand, motor_Drehmomentkoef, motor_Daempfung,motor_Widerstand, motor_Induktivitaet, motor_BackEMFkoef,mue_g, g, Xi, B_dis,I_Reifen,L_B)               
+%x-vec:
+i_m1 = x(1);
+om_m1 = x(2);
+i_m2 = x(3);
+om_m2 = x(4);
+theta = x(7);
+
+%Spannungs-Eingang
+Ue1 = u(1);
+Ue2 = u(2);
+
+J_Mn = p.Motoruebersetzung^2 * p.motor_traegheit;
+C1 = (p.m_ges*p.Reifen_Radius^2)/4 - (p.I_Bot*p.Reifen_Radius^2)/(p.Achsabstand^2);
+C2 = (p.m_ges*p.Reifen_Radius^2)/4 + (p.I_Bot*p.Reifen_Radius^2)/(p.Achsabstand^2);
+
+M11 = J_Mn + C1 + p.I_Reifen;
+M12 = C2;
+M21 = M12;
+M22 = M11;
+
+J_g = [M11 M12;
+       M21 M22];
+
+% Grenzgeschwindigkeit gegen 0
+v_Tresh = 1e-3;
+% Grenzwinkelgeschwindigkeit gegen 0
+omega_Tresh = 1e-3;
+% Grenzwinkelgeschwindigkeits-Unterschied
+eps_om = 1e-6;
+% Steigungen für Glättungsfunktionen
+k_smooth = 500; %5000
+k_xppos = 100;
+k_xp = 500;% 5 / eps_om_sym
+% konstante Nenner-Erwiterungen für Singlaritäten
+delta_sig_sq = 1e-6;
+xp_delta = 1e-6;
+eta_abs_sq = (eps_om/10)^2;
+
+% Angriffspunkte der Reibngskräfte
+B1 = [(1-p.Xi)*p.B_dis; p.L_B/2];
+B2 = [(1-p.Xi)*p.B_dis; -p.L_B/2];
+
+% Berechnung der reibungskraft-Angriffswinkel über Ermittlung von
+% Geschwindigkeitspol xp
+OmegaSum = om_m1 + om_m2;
+deltaOmega = om_m2-om_m1;
+smooth_abs_DeltaOmega = sqrt(deltaOmega^2 + eta_abs_sq);
+
+v_Bot = (p.Reifen_Radius/2)*OmegaSum;
+omega_Bot = (p.Reifen_Radius/p.Achsabstand)*smooth_abs_DeltaOmega;
+
+% Glättungsfunktionen für Reibungskraft-> keine Reibung bei v_Bot / omega_Bot =0
+smooth_factor_straight = 0.5 * (1 + tanh(k_smooth * (v_Bot - v_Tresh)));
+smooth_factor_spin = 0.5 * (1 + tanh(k_smooth * (omega_Bot - omega_Tresh)));
+C_Frb = p.mue_g * p.m_ges * p.g * (p.Xi/2);
+Frb_smooth_straight = smooth_factor_straight * C_Frb;
+Frb_smooth_spin = smooth_factor_spin * C_Frb;
+
+% Bestimmung von Geschwndigkeitspol xp
+w = 0.5 * (1 + tanh(k_xp*(smooth_abs_DeltaOmega - eps_om)));
+
+inv_xp_A_const = 1e-6;
+
+inv_xp_B_turn_nun = (2/p.Achsabstand) * deltaOmega * OmegaSum;
+inv_xp_B_turn_dun = OmegaSum^2 + delta_sig_sq;
+inv_xp_B_turn = inv_xp_B_turn_nun / inv_xp_B_turn_dun;
+
+inv_xp_smooth = (1-w) * inv_xp_A_const + w * inv_xp_B_turn;
+xp_smooth = 1./(inv_xp_smooth+xp_delta);
+
+xppos_translation = [-p.Xi*p.B_dis; xp_smooth];
+xppos_turnonpint = [-p.Xi*p.B_dis; 0];
+
+s = 1- tanh((k_xppos * OmegaSum)^2);
+xppos = (1-s)* xppos_translation + s * xppos_turnonpint;
+
+% Bestimmung von angriffswinkel von Reibkräften
+B1xp = xppos - B1;
+B2xp = xppos - B2;
+Fb1_dir = [B1xp(2);-B1xp(1)];
+Fb2_dir = [B2xp(2);-B2xp(1)];
+Fb1_dir_unit = Fb1_dir / norm(Fb1_dir);
+Fb2_dir_unit = Fb2_dir / norm(Fb2_dir);
+FRB1spin = Frb_smooth_spin * Fb1_dir_unit;
+FRB2spin = Frb_smooth_spin * Fb2_dir_unit;
+
+% Durch reibungskräfte resultierende Momente am Roboter
+M_FR1v = cross([B1;0],[FRB1spin;0]);
+M_FR1 = M_FR1v(3);
+M_FR2v = cross([B2;0],[FRB2spin;0]);
+M_FR2 = M_FR2v(3);
+
+% Gesamte Momenten-Belastung aufgrund der reibung bei Kontaktpunkten
+Tr1_smooth = -(Frb_smooth_straight* p.Reifen_Radius/2) * (Fb1_dir_unit(1) + Fb2_dir_unit(1)) + w*(p.Reifen_Radius/p.Achsabstand)*(M_FR1+M_FR2);
+Tr2_smooth = -(Frb_smooth_straight* p.Reifen_Radius/2) * (Fb1_dir_unit(1) + Fb2_dir_unit(1)) - w*(p.Reifen_Radius/p.Achsabstand)*(M_FR1+M_FR2);
+
+% Gesamte Belastungen an den Motoren
+M_belastungen = [p.Motoruebersetzung * p.motor_Drehmomentkoef * i_m1 - p.Motoruebersetzung^2 * p.motor_Daempfung*om_m1 + Tr1_smooth;
+                 p.Motoruebersetzung * p.motor_Drehmomentkoef * i_m2 - p.Motoruebersetzung^2 * p.motor_Daempfung*om_m2 + Tr2_smooth];
+
+% Bestimmung von Winkelbeschleunigungen der Motoren
+om_dot = J_g \ M_belastungen;
+
+di1dt = -(p.motor_Widerstand/p.motor_Induktivitaet) * i_m1 - (p.Motoruebersetzung * p.motor_BackEMFkoef/p.motor_Induktivitaet) * om_m1 + (1/p.motor_Induktivitaet)* Ue1;
+dom1dt = om_dot(1);
+di2dt = -(p.motor_Widerstand/p.motor_Induktivitaet) * i_m2 - (p.Motoruebersetzung * p.motor_BackEMFkoef/p.motor_Induktivitaet) * om_m2 + (1/p.motor_Induktivitaet)* Ue2;
+dom2dt = om_dot(2);
+vx = (p.Reifen_Radius/2) * (om_m1 + om_m2) * cos(theta);
+vy = (p.Reifen_Radius/2) * (om_m1 + om_m2) * sin(theta);
+dthetadt = (p.Reifen_Radius/p.Achsabstand) * (om_m2-om_m1);
+
+xdot = [di1dt;dom1dt;di2dt;dom2dt;vx;vy;dthetadt];
 end
 
