@@ -37,6 +37,9 @@ x0s = [0;
        StartPos(1);
        StartPos(2);
        0;];
+
+x0Motor = [0;
+           0];
 %% Pose Ausgangsmatrix
 c_pose= [0 0 0 0 1 0 0;
          0 0 0 0 0 1 0;
