@@ -1,5 +1,5 @@
 clc; clear; close all; 
-%für beide Modelle
+
 
 %% general
 g = 9.81;                    % [m/s^2]
@@ -29,6 +29,7 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 %% Sim Parameters
 t_span = [0 1.5];            % [s]
 StartPos = [0.3;0.3];        % [m]
+Zielpunkt = [1;1.2];         % [m]
 U_sim = [10.5; 12];          % [V]
 
 ParamsList= {'g','m_ges','Achsabstand','Motoruebersetzung','B_dis','Xi','I_Bot','mue_g','Reifen_Radius','I_Reifen','L_B','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef'};

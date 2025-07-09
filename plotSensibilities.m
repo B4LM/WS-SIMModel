@@ -11,7 +11,7 @@ subplot(2,1,1);
 hold on;
 
 for i =1:5
-    plot(pstruct.(param).time{i}, pstruct.(param).velocity{i},'Color',colors(i,:), 'DisplayName',[num2str(percentages(i)) '%']);
+    plot(pstruct.(param).time{i}, squeeze(pstruct.(param).velocity{i}),'Color',colors(i,:), 'DisplayName',[num2str(percentages(i)) '%']);
 end
 
 title("Bot Geschwindigkeit");
