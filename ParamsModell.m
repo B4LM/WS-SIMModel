@@ -1,10 +1,7 @@
 clc; clear; close all; 
-%für beide Modelle
+%für DC-Motormodell und beide Robotermodelle
 
-%% um in Simulink Modell zu wechseln (Modell 1, also mit Reibblöcken ist voreingestellt)
-Modell=1;
-
-%% general
+%% Allgemeine Parameter
 g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
 Achsabstand = 0.15;          % [m]    
@@ -18,21 +15,23 @@ I_Reifen = 1.8 * 10^-5;      % [kg*m^2]
 L_B = 0.12;                  % [m]
 
 
-%% Motormodell
-
+%% Motorparameter
 motor_traegheit = 0.847 * 10^-6;    % [kg*m^2] 
 motor_Induktivitaet = 0.0002;       % [H]
 motor_Widerstand =  13.33;          % [Ohm]
-motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4; 9.12 * 10^-8];
-motor_Drehmomentkoef = 0.0035;      % [N*m / A]                     old: 0.0174;
+motor_Daempfung = 9.12 * 10^-8;     % [N*m*s]
+motor_Drehmomentkoef = 0.0035;      % [N*m / A]              
 motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 %% Wegpunkte
 
-StartPos = [0.5-B_dis*Xi;0.5];     
+StartPos = [0.5-B_dis*Xi;0.5];
+
+%Für Positionskontrolle
 Zielpunkt = [1;1.2];
 
 %% Startwerte
+%Rür beide Robotermodelle 
 x0s = [0;
        0;
        0;
@@ -41,15 +40,17 @@ x0s = [0;
        StartPos(2);
        0;];
 
+%Für DC-Motor-Modell
 x0Motor = [0;
            0];
+
 %% Pose Ausgangsmatrix
 c_pose= [0 0 0 0 1 0 0;
          0 0 0 0 0 1 0;
          0 0 0 0 0 0 1];
 %-> x-pos, y-pos, theta
 
-%% Map
+%% Occupancy Map/Arena
 
 myMap = binaryOccupancyMap(1.8,1.8,100);
 

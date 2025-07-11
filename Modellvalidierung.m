@@ -1,6 +1,6 @@
  clear; close all; % clc;
 
-%Modellvalidierung bei eingeschwndgenem Zustand-> konstante gerade und
+%Modellvalidierung bei eingeschwungenem Zustand-> konstante gerade und
 %drehen an Stelle
 
 %% Modellparameter
@@ -36,11 +36,12 @@ vel_straight = om_straight*Reifen_Radius
 
 %% +/- 5V an Position drehen
 U = 5; %[V]
-%%%
+
 B1 = [(1-Xi)*B_dis; L_B/2];
 B2 = [(1-Xi)*B_dis; -L_B/2];
 xppos = [-Xi*B_dis; 0];
 
+%Berechnung der Momente durch Reibblöcke
 B1xp = xppos - B1;
 B2xp = xppos - B2;
 Fb1_dir = [B1xp(2);-B1xp(1)];

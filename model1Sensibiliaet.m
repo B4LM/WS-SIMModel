@@ -1,8 +1,7 @@
 % Die Eingänge müssen im Simulink Modell eingesetllt werden!
 clc; clear; close all; 
 
-
-%% general
+%% Allgemeine Parameter
 g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
 Achsabstand = 0.15;          % [m]    
@@ -15,14 +14,12 @@ Reifen_Radius = 0.04;        % [m]
 I_Reifen = 1.8 * 10^-5;      % [kg*m^2]
 L_B = 0.12;                  % [m]
 
-
-%% Motormodell
-
+%% Motorparameter
 motor_traegheit = 0.847 * 10^-6;    % [kg*m^2] 
 motor_Induktivitaet = 0.0002;       % [H]
 motor_Widerstand =  13.33;          % [Ohm]
-motor_Daempfung = 9.12 * 10^-8;     % [N*m*s][7.216 * 10^-4; 9.12 * 10^-8];
-motor_Drehmomentkoef = 0.0035;      % [N*m / A]                     old: 0.0174;
+motor_Daempfung = 9.12 * 10^-8;     % [N*m*s]
+motor_Drehmomentkoef = 0.0035;      % [N*m / A]              
 motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 
 
@@ -48,6 +45,7 @@ c_pose= [0 0 0 0 1 0 0;
          0 0 0 0 0 0 1];
 %-> x-pos, y-pos, theta
 
+%% Liste der Parameter, kann auf interessierte reduziert werden
 %,'Achsabstand','Motoruebersetzung','B_dis','Xi','I_Bot','mue_g','Reifen_Radius','I_Reifen','L_B','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef'
 ParamsList= {'g','m_ges','Achsabstand','Motoruebersetzung','B_dis','Xi','I_Bot','mue_g','Reifen_Radius','I_Reifen','L_B','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef'};
 
@@ -61,7 +59,7 @@ end
 
 for i = 1:length(ParamsList)
     disp(ParamsList{i})
-    for j=1:5 %ändern der Parameter im Workspace
+    for j=1:5 % ändern der Parameter im Workspace
         ParamZero = eval(ParamsList{i});
         switch j
             case 1
@@ -77,25 +75,23 @@ for i = 1:length(ParamsList)
         end
         assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value * factor)
         
-    %Simulation selber
+    %% Simulation selber
     load_system("SimpleBot_V4.slx")
     set_param("SimpleBot_V4/Robot Visualizer1","Commented","on")
     disp('Sim startet!')
     out = sim('SimpleBot_V4.slx');
     disp('Sim beendet!')
 
-    %Results
-
+    %Ergebnisse
     pstruct.(ParamsList{i}).savePosData(out.position.Data,j);
     pstruct.(ParamsList{i}).saveVelData(out.velocity.Data,j);
     pstruct.(ParamsList{i}).saveTime(out.velocity.Time,j);
-    %pstruct.(ParamsList{i}).position(j) = [out.position.Data(:,1), out.position.Data(:,2)];
-    %pstruct.(ParamsList{i}).velocity(j) = [out.velocity.Time, out.velocity.Data];
 
     end
     assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value)
 end
 
+%% plotten
 for pn = 1: length(ParamsList)
     plotSensibilities(pstruct,ParamsList{pn})
     input('nächter Parameter');
