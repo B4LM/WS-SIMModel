@@ -1,6 +1,9 @@
 clc; clear; close all; 
 %für beide Modelle
 
+%% um in Simulink Modell zu wechseln (Modell 1, also mit Reibblöcken ist voreingestellt)
+Modell=1;
+
 %% general
 g = 9.81;                    % [m/s^2]
 m_ges = 1;                   % [kg]
