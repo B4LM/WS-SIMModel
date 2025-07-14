@@ -76,10 +76,9 @@ for i = 1:length(ParamsList)
         assignin('base',ParamsList{i},pstruct.(ParamsList{i}).value * factor)
         
     %% Simulation selber
-    load_system("SimpleBot_V4.slx")
-    set_param("SimpleBot_V4/Robot Visualizer1","Commented","on")
+    load_system("BotModel2Sens.slx")
     disp('Sim startet!')
-    out = sim('SimpleBot_V4.slx');
+    out = sim('BotModel2Sens.slx');
     disp('Sim beendet!')
 
     %Ergebnisse
