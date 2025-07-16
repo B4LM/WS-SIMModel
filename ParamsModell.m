@@ -28,7 +28,7 @@ motor_BackEMFkoef = 0.0035;         % [V*s / rad]
 StartPos = [0.5-B_dis*Xi;0.5];
 
 %Für Positionskontrolle
-Zielpunkt = [1;1.2];
+Zielpunkt = [0.4;1.4];
 
 %% Startwerte
 %Rür beide Robotermodelle 
@@ -64,6 +64,44 @@ walls((180-Zielpunkt(2)*100)-1:(180-Zielpunkt(2)*100)+1,(Zielpunkt(1)*100)-1:(Zi
 
 setOccupancy(myMap,[1 1], walls, "grid")
 show(myMap)
+
+
+%%%%%%% safe
+% 
+% function [e_dis,e_angle, Distance] = fcn(thetaist,xist,xsoll)
+% 
+% Pos_Error = xist-xsoll;   %Distance to waypoint in global coordinates      
+% angle2goal = atan2(Pos_Error(2),Pos_Error(1));
+% %RotPhi = [cos(theta) +sin(theta);-sin(theta) cos(theta)];
+% e_angleraw = thetaist-angle2goal; %nicht unbedingt kürzester Winkel
+% 
+% e_dis = norm(Pos_Error);
+% e_angle = atan2(sin(e_angleraw),cos(e_angleraw));
+% 
+% 
+% % E_bot = RotPhi * Pos_Error;
+% % PID1e = E_bot(1);        %direct distance to waypoint (on body coordinates)
+% % PID2e = E_bot(2);        %lateral distance to waypoint (on body coordinates)
+% 
+% Distance = norm(Pos_Error);
+% end
+% 
+% function [U2, U1] = fcn(U_t, U_r)%, Achsabstand, Reifen_Radius,motor_BackEMFkoef, Motoruebersetzung
+% 
+% % U1 = (Motoruebersetzung / motor_BackEMFkoef) * ((ve-om*(Achsabstand/2))/Reifen_Radius);
+% % U2 = (Motoruebersetzung / motor_BackEMFkoef) * ((ve+om*(Achsabstand/2))/Reifen_Radius;
+% 
+% % om_t = PID1e;
+% % om_r = PID2e;
+% 
+% % U1 = (motor_BackEMFkoef/Motoruebersetzung)*(om_t-om_r);
+% % U2 = (motor_BackEMFkoef/Motoruebersetzung)*(om_t+om_r);
+% U1 = (U_t-U_r);
+% U2 = (U_t+U_r);
+% 
+% % U1 = max(min(U1, 60), -60);
+% % U2 = max(min(U2, 60), -60);
+% end
 
 
 

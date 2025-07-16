@@ -48,6 +48,7 @@ c_pose= [0 0 0 0 1 0 0;
 %% Liste der Parameter, kann auf interessierte reduziert werden
 %,'Achsabstand','Motoruebersetzung','B_dis','Xi','I_Bot','mue_g','Reifen_Radius','I_Reifen','L_B','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef'
 ParamsList= {'g','m_ges','Achsabstand','Motoruebersetzung','B_dis','Xi','I_Bot','mue_g','Reifen_Radius','I_Reifen','L_B','motor_traegheit','motor_Induktivitaet','motor_Widerstand','motor_Daempfung','motor_Drehmomentkoef','motor_BackEMFkoef'};
+p_list_latex = {'g', '$m_{ges}$','Achsabstand', '$i_G$', '$B_{dis}$', '$\xi$', '$I_{Bot}$', '$\mu_g$','r', '$I_{Reifen}$', '$L_B$', '$I_M$', '$L_M$', '$\Omega_M$','$b_M$', '$k_T$','$k_B$'};
 
 pstruct = struct();
 
@@ -92,7 +93,7 @@ end
 
 %% plotten
 for pn = 1: length(ParamsList)
-    plotSensibilities(pstruct,ParamsList{pn})
+    plotSensibilities(pstruct,ParamsList{pn},p_list_latex{pn})
     input('nächter Parameter');
 end
 

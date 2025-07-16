@@ -41,18 +41,20 @@ p_struct.motor_Widerstand = motor_Widerstand;
 p_struct.motor_Induktivitaet = motor_Induktivitaet;
 p_struct.motor_BackEMFkoef = motor_BackEMFkoef;
 p_struct.I_Reifen = I_Reifen;
+p_struct.B_dis = B_dis;
+p_struct.Xi = Xi; 
 
 pnum = length(fieldnames(p_struct));
 
 %% Symbolische Variablen
 syms i_m1 om_m1 i_m2 om_m2 xpos ypos theta real
 syms Ue1 Ue2 real
-syms p_Motoruebersetzung p_motor_traegheit p_m_ges p_Reifen_Radius p_I_Bot p_Achsabstand p_motor_Drehmomentkoef p_motor_Daempfung p_motor_Widerstand p_motor_Induktivitaet p_motor_BackEMFkoef p_I_Reifen real
+syms p_Motoruebersetzung p_motor_traegheit p_m_ges p_Reifen_Radius p_I_Bot p_Achsabstand p_motor_Drehmomentkoef p_motor_Daempfung p_motor_Widerstand p_motor_Induktivitaet p_motor_BackEMFkoef p_I_Reifen p_B_dis p_Xi real
 
 x_sym = [i_m1; om_m1;i_m2; om_m2; xpos; ypos; theta];
 u_sym = [Ue1; Ue2];
-params_sym = [p_Motoruebersetzung; p_motor_traegheit; p_m_ges; p_Reifen_Radius; p_I_Bot; p_Achsabstand; p_motor_Drehmomentkoef; p_motor_Daempfung; p_motor_Widerstand; p_motor_Induktivitaet; p_motor_BackEMFkoef; p_I_Reifen];
-params_sym_ordered = {p_Motoruebersetzung, p_motor_traegheit, p_m_ges, p_Reifen_Radius, p_I_Bot, p_Achsabstand, p_motor_Drehmomentkoef, p_motor_Daempfung, p_motor_Widerstand, p_motor_Induktivitaet, p_motor_BackEMFkoef, p_I_Reifen};
+params_sym = [p_Motoruebersetzung; p_motor_traegheit; p_m_ges; p_Reifen_Radius; p_I_Bot; p_Achsabstand; p_motor_Drehmomentkoef; p_motor_Daempfung; p_motor_Widerstand; p_motor_Induktivitaet; p_motor_BackEMFkoef; p_I_Reifen; p_B_dis; p_Xi];
+params_sym_ordered = {p_Motoruebersetzung, p_motor_traegheit, p_m_ges, p_Reifen_Radius, p_I_Bot, p_Achsabstand, p_motor_Drehmomentkoef, p_motor_Daempfung, p_motor_Widerstand, p_motor_Induktivitaet, p_motor_BackEMFkoef, p_I_Reifen, p_B_dis, p_Xi};
 
 %% symbolische Differentialgleichung
 
@@ -76,14 +78,35 @@ M_belastungen_sym = [p_Motoruebersetzung * p_motor_Drehmomentkoef * i_m1 - p_Mot
 % Bestimmung von Winkelbeschleunigungen der Motoren
 om_dot_sym = inv(J_g_sym) * M_belastungen_sym;
 
+%% Berechnung der Kinematik
+
+%Geschwindigkeit vom Achsenmitelpunkt im inertialfestem Koordinatensystem
+V_M_0_sym = [(p_Reifen_Radius/2) * (om_m1 + om_m2)*cos(theta);
+        (p_Reifen_Radius/2) * (om_m1 + om_m2)*sin(theta)];
+
+%Winkelgeschwindigkeit des Roboters in der Ebene
+Om_Bot_sym = (p_Reifen_Radius/p_Achsabstand) * (om_m2-om_m1);
+
+%Rotationsmatrix vom Roboter- ins inertialfeste- Koordinatensystem
+A_0B_sym = [cos(theta) -sin(theta);
+            sin(theta) cos(theta)];
+
+%Schwerpunktgeschwindigkeit aufgrund der drehung im
+%Roboter-Koordinatensystem
+Vs_rot_B_sym = [0; p_B_dis*p_Xi*Om_Bot_sym]; 
+
+%Gesamt-Schwerpunktgeschwindigkeit des Roboters im inertialfesten
+%Koordinatensystem
+V_Bots_0_sym = V_M_0_sym + A_0B_sym*Vs_rot_B_sym;
+
 % Aufstellen von x-dot
 di1dt_sym = -(p_motor_Widerstand/p_motor_Induktivitaet) * i_m1 - (p_Motoruebersetzung * p_motor_BackEMFkoef/p_motor_Induktivitaet) * om_m1 + (1/p_motor_Induktivitaet)* Ue1;
 dom1dt_sym = om_dot_sym(1);
 di2dt_sym = -(p_motor_Widerstand/p_motor_Induktivitaet) * i_m2 - (p_Motoruebersetzung * p_motor_BackEMFkoef/p_motor_Induktivitaet) * om_m2 + (1/p_motor_Induktivitaet)* Ue2;
 dom2dt_sym = om_dot_sym(2);
-vx_sym = (p_Reifen_Radius/2) * (om_m1 + om_m2) * cos(theta);
-vy_sym = (p_Reifen_Radius/2) * (om_m1 + om_m2) * sin(theta);
-dthetadt_sym = (p_Reifen_Radius/p_Achsabstand) * (om_m2-om_m1);
+vx_sym = V_Bots_0_sym(1);
+vy_sym = V_Bots_0_sym(2);
+dthetadt_sym = Om_Bot_sym;
 
 xdot_sym = [di1dt_sym;dom1dt_sym;di2dt_sym;dom2dt_sym;vx_sym;vy_sym;dthetadt_sym];
 
@@ -104,7 +127,7 @@ x0 = [0;
        StartPos(2);
        0;];
 
-S0 = zeros(7,12);
+S0 = zeros(7,pnum);
 X_aug_0 = [x0;S0(:)];
 
 %% ODE-Sim
@@ -126,9 +149,10 @@ p_nom_values = zeros(length(p_list),1);
 for k = 1:length(p_nom_values)
     p_nom_values(k) = p_struct.(p_list{k});
 end
+
 s_list = {'i_m1','om_m1','i_m2','om_m2','xpos','ypos','theta'};
 s_list_latex = {'$i_{M1}$','$\omega_{M1}$','$i_{M2}$','$\omega_{M2}$','$x_{pos}$','$y_{pos}$','$\theta$'};
-p_list_latex = {'Motoruebersetzung', '$Traegheit_M$', '$m_{ges}$', '$R_{Reifen}$', '$I_{Bot}$', 'Achsabstand', '$Drehmomentkoef_M$', '$Daempfung_M$', '$\Omega_M$', '$Induktivitaet_M$', '$BackEMFkoef_M$', '$I_{Reifen}$'};
+p_list_latex = {'Motoruebersetzung', '$Traegheit_M$', '$m_{ges}$', '$R_{Reifen}$', '$I_{Bot}$', 'Achsabstand', '$Drehmomentkoef_M$', '$Daempfung_M$', '$\Omega_M$', '$Induktivitaet_M$', '$BackEMFkoef_M$', '$I_{Reifen}$','$B_{dis}$','$\xi$'};
 
 S_rel_tensor = zeros(size(S_traj_tensor));
 for kp = 1:length(p_list)
@@ -137,8 +161,27 @@ end
 
 
 %% Plotten der Ergebnisse mit ineraktiver Abfrage nach welchem Zustand
+
 again = true;
 counter = 0;
+h_plot = gobjects(1, length(p_list));  % Preallocate Grafik-Handles
+colors = [
+    0.0000, 0.4470, 0.7410;  % Blau
+    0.8500, 0.3250, 0.0980;  % Orange
+    0.9290, 0.6940, 0.1250;  % Gelb
+    0.4940, 0.1840, 0.5560;  % Violett
+    0.4660, 0.6740, 0.1880;  % Grün
+    0.3010, 0.7450, 0.9330;  % Hellblau
+    0.6350, 0.0780, 0.1840;  % Rot
+    0.0000, 0.0000, 0.0000;  % Schwarz
+    0.9060, 0.1610, 0.5410;  % Pink
+    0.6000, 0.6000, 0.6000;  % Grau
+    0.0000, 0.6000, 0.0000;  % Dunkelgrün
+    0.0000, 0.0000, 0.5000;  % Dunkelblau
+    1.0000, 0.8430, 0.0000;  % Gold
+    0.5000, 0.0000, 0.0000;  % Dunkelrot
+];
+
 while again == true
     while true
         if counter ~=0
@@ -184,12 +227,12 @@ while again == true
     figure;
     hold on
     for p = 1:length(p_list)
-        plot(T,S_rel_tensor(:,state_idx,p))
+        h_plot(p) = plot(T, S_rel_tensor(:, state_idx, p), 'Color', colors(p,:), 'DisplayName', p_list_latex{p});
     end
-    title(['relative parameter-sensitvity of ',s_list_latex{state_idx}], 'Interpreter', 'latex');
+    title(['Relative Parameter-Sensitivitaet von ',s_list_latex{state_idx}], 'Interpreter', 'latex');
     xlabel('time in [s]');
-    ylabel('$p_k * \frac{dS}{dp_k}$', 'Interpreter', 'latex')
-    legend(p_list_latex,'Interpreter', 'latex', 'Location', 'eastoutside');
+    ylabel('$p_k * S(p_k,t)$', 'Interpreter', 'latex')
+    legend(h_plot, 'Interpreter', 'latex', 'Location', 'eastoutside');
     grid on;
 end
 
@@ -198,7 +241,7 @@ end
 
 %% Dynamik- Differentailgleichung, wird verwendet für erweiterte Differentialgleichng-> Simulation
 
-function xdot = Dynamics(x,u,Motoruebersetzung, motor_traegheit, m_ges, Reifen_Radius, I_Bot, Achsabstand, motor_Drehmomentkoef, motor_Daempfung,motor_Widerstand, motor_Induktivitaet, motor_BackEMFkoef,I_Reifen)
+function xdot = Dynamics(x,u,Motoruebersetzung, motor_traegheit, m_ges, Reifen_Radius, I_Bot, Achsabstand, motor_Drehmomentkoef, motor_Daempfung,motor_Widerstand, motor_Induktivitaet, motor_BackEMFkoef,I_Reifen,B_dis,Xi)
 
 % Input
 %x-vec:
@@ -232,27 +275,48 @@ M_belastungen = [Motoruebersetzung * motor_Drehmomentkoef * i_m1 - Motorueberset
 % Bestimmung von Winkelbeschleunigungen der Motoren
 om_dot = inv(J_g) * M_belastungen;
 
+% Berechnung der Kinematik
+%Geschwindigkeit vom Achsenmitelpunkt im inertialfestem Koordinatensystem
+V_M_0 = [(Reifen_Radius/2) * (om_m1 + om_m2)*cos(theta);
+        (Reifen_Radius/2) * (om_m1 + om_m2)*sin(theta)];
+
+%Winkelgeschwindigkeit des Roboters in der Ebene
+Om_Bot = (Reifen_Radius/Achsabstand) * (om_m2-om_m1);
+
+%Rotationsmatrix vom Roboter- ins inertialfeste- Koordinatensystem
+A_0B = [cos(theta) -sin(theta);
+        sin(theta) cos(theta)];
+
+%Schwerpunktgeschwindigkeit aufgrund der drehung im
+%Roboter-Koordinatensystem
+Vs_rot_B = [0; B_dis*Xi*Om_Bot]; 
+
+%Gesamt-Schwerpunktgeschwindigkeit des Roboters im inertialfesten
+%Koordinatensystem
+V_Bots_0 = V_M_0 + A_0B*Vs_rot_B;
+
 % Aufstellen von x-dot
 di1dt = -(motor_Widerstand/motor_Induktivitaet) * i_m1 - (Motoruebersetzung * motor_BackEMFkoef/motor_Induktivitaet) * om_m1 + (1/motor_Induktivitaet)* Ue1;
 dom1dt = om_dot(1);
 di2dt = -(motor_Widerstand/motor_Induktivitaet) * i_m2 - (Motoruebersetzung * motor_BackEMFkoef/motor_Induktivitaet) * om_m2 + (1/motor_Induktivitaet)* Ue2;
 dom2dt = om_dot(2);
-vx = (Reifen_Radius/2) * (om_m1 + om_m2) * cos(theta);
-vy = (Reifen_Radius/2) * (om_m1 + om_m2) * sin(theta);
-dthetadt = (Reifen_Radius/Achsabstand) * (om_m2-om_m1);
+vx = V_Bots_0(1);
+vy = V_Bots_0(2);
+dthetadt = Om_Bot;
 
 xdot = [di1dt;dom1dt;di2dt;dom2dt;vx;vy;dthetadt];
 end
 
 %% Erweiterte Dynamik Funktion
-
+%Diese Funktion dient als Differentialgleichung für den ODE-Solver, da die Sensitivitätsmatrix die ursprünglichen Zustände benötigt, wird
+%in X_aug beide Zustandsräume gespeichert
 function dX_aug_dt = AugmentedDynamics(t, X_aug, u, p_struct, A_fun, B_fun,pnum)
 x = X_aug(1:7);
 S_matrix = reshape(X_aug(8:end),7,pnum);
 
-x_dot = Dynamics(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung,p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef,p_struct.I_Reifen);
-A_jacobian = A_fun(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen);
-B_jacobian = B_fun(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen);
+x_dot = Dynamics(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung,p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef,p_struct.I_Reifen,p_struct.B_dis,p_struct.Xi);
+A_jacobian = A_fun(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen,p_struct.B_dis,p_struct.Xi);
+B_jacobian = B_fun(x,u,p_struct.Motoruebersetzung, p_struct.motor_traegheit, p_struct.m_ges, p_struct.Reifen_Radius, p_struct.I_Bot, p_struct.Achsabstand, p_struct.motor_Drehmomentkoef, p_struct.motor_Daempfung, p_struct.motor_Widerstand, p_struct.motor_Induktivitaet, p_struct.motor_BackEMFkoef, p_struct.I_Reifen,p_struct.B_dis,p_struct.Xi);
 
 S_dot_matrix = zeros(7,pnum);
 for j = 1:pnum

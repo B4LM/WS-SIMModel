@@ -1,4 +1,4 @@
-function plotSensibilities(pstruct,param)
+function plotSensibilities(pstruct,param,name)
 close all
 
 percentages =[90, 95, 100, 105, 110];
@@ -34,7 +34,7 @@ ylabel('y-Position [m]')
 legend;
 grid on;
 
-sgtitle(["Sensibität des Modells auf" param]);
+sgtitle(['Sensibitaet des Modells auf Abweichungen von ',name], 'Interpreter', 'latex');
 
 end
 
